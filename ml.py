@@ -18,17 +18,16 @@ class DecisionTree:
             prob = float(row[1])/float(total)
             prob = prob * np.log2(prob)
             entropy -= prob
+        print(entropy)
 
         best_attribute = self._attributes[0]
         best_information_gain = 0
-        for att in self._attributes:
-            att_counts = pd.crosstab(self._train_df[att],self._train_df[classes])
-            for row in att_counts.iterrows():
-                totalNumer = 0
-                for decision in row:
-                    print(decision)
-                
-            
+            att_values = self._train_df.groupby([att, classes])[self._classes].count()
+            i = 0
+            print(att_values.index)
+            for row in att_values.iteritems():
+            i+=1
+            print(i)
 
                 
 
