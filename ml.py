@@ -22,13 +22,33 @@ class DecisionTree:
 
         best_attribute = self._attributes[0]
         best_information_gain = 0
-            att_values = self._train_df.groupby([att, classes])[self._classes].count()
-            i = 0
-            print(att_values.index)
-            for row in att_values.iteritems():
-            i+=1
-            print(i)
+        for att in attributes:
+            att_values = self._train_df.groupby([att])[self._classes].count()
+            att_gain = entropy   
+            for att_val in att_values.iteritems():
+                val_count = att_val[1]
+                mask_val = self._train_df[att] == att_val[0]
+                data_new = self._train_df[mask_val]
+                decision_values = data_new.groupby(self._classes)[att].count()
+                val_prob = float(val_count) / float(total)
+                decision_total = decision_values.sum()
+                dec_entropy_per_attribute = 0
+                for decision in decision_values.iteritems():
+                    decision_count = decision[1]
+                    prob_per_decision = float(decision_count)/float(decision_total)
+                    dec_entropy_per_attribute -= (prob_per_decision * np.log2(prob_per_decision))
+                att_gain -= (dec_entropy_per_attribute * val_prob)
+            if(att_gain > best_information_gain):
+                best_information_gain = att_gain
+                best_attribute = att
+        
+            
 
+
+                    
+                    
+                    
+                
                 
 
         #for att in attributes:
