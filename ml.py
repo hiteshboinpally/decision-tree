@@ -57,18 +57,18 @@ class DecisionTree:
 
 
     def add_node(self, df, best_att, curr_node):
-        unique_vals = list(df[self._classes].unique())
+        unique_decs = list(df[self._classes].unique())
         curr_node.nexts = []
         curr_node.splits = []
-        if len(unique_vals) == 1:
-            curr_node.nexts.append(unique_vals[0])
+        if len(unique_decs) == 1:
+            curr_node.nexts.append(unique_decs[0])
         else:
             unique_vals = list(df[best_att].unique())
             unique_dfs = []
             for val in unique_vals:
                 unique_dfs.append(df[df[best_att] == val])
 
-            print("unique df length", len(unique_dfs), "unique val length", len(unique_vals))
+            # print("unique df length", len(unique_dfs), "unique val length", len(unique_vals))
             for i in range(len(unique_vals)):
                 unique_df = unique_dfs[i]
                 val = unique_vals[i]
@@ -102,17 +102,39 @@ class DecisionTree:
 
     def check_test_set(self):
         total_correct = 0
-        for row in self._test_df.iterrows():
-            print(row)
-            self.pass_thru_tree(row)
+        for index, row in self._test_df.iterrows():
+            # print(row)
+            total_correct += self.start_tree(row)
 
+        # print(total_correct)
+        return total_correct / len(self._test_df)
 
     def start_tree(self, row):
-        self.pass_thru_tree(row, self._tree_head)
+        return self.pass_thru_tree(row, self._tree_head)
 
 
     def pass_thru_tree(self, row, node):
-
+        # print(type(row))
+        if type(node) == str:
+            # print("desc", node)
+            row_desc = row[self._classes]
+            # print("row desc", row_desc)
+            if node == row_desc:
+                # print("we're good!")
+                return 1
+            else:
+                # print("rip")
+                return 0
+        else:
+            curr_att = node.data
+            val_in_row = row[curr_att]
+            if val_in_row not in node.splits:
+                next_node_index = np.random.randint(len(node.nexts))
+            else:
+                next_node_index = node.splits.index(val_in_row)
+            # print("val_in_row", val_in_row)
+            # print("next_node_index", next_node_index)
+            return self.pass_thru_tree(row, node.nexts[next_node_index])
 
 
     def calc_information_gain(self, attribute):
@@ -129,10 +151,11 @@ def main():
     data = pd.read_csv("sample.txt")
     cols = list(data.columns)
     tree_one = DecisionTree(cols[4], cols[0:4], data)
-    tree_one.print_tree()
-    print("train df \n", tree_one._train_df)
-    print("test df \n", tree_one._test_df)
-    tree_one.check_test_set()
+    # tree_one.print_tree()
+    # print("train df \n", tree_one._train_df)
+    # print("test df \n", tree_one._test_df)
+    # tree_one.check_test_set()
+    print("accuracy", tree_one.check_test_set())
 
 if __name__ == "__main__":
     main()
