@@ -18,17 +18,17 @@ class DecisionTree:
     def calc_best_att(self, df):
         classes_counts = df.groupby(self._classes)[self._attributes[0]].count()
         total = len(df)
-        entropy = 0
+        dec_entropy = 0
         for row in classes_counts.iteritems():
             prob = float(row[1])/float(total)
             prob = prob * np.log2(prob)
-            entropy -= prob
+            dec_entropy -= prob
 
         best_attribute = self._attributes[0]
         best_information_gain = 0
         for att in self._attributes:
             att_values = df.groupby([att])[self._classes].count()
-            att_gain = entropy
+            att_gain = dec_entropy
 
             for att_val in att_values.iteritems():
                 val_count = att_val[1]
@@ -52,34 +52,67 @@ class DecisionTree:
 
     def create_tree(self):
         best_att = self.calc_best_att(self._train_df)
-        print("first best attribute", best_att)
         self._tree_head.data = best_att
         self.add_node(self._train_df, best_att, self._tree_head)
 
 
     def add_node(self, df, best_att, curr_node):
         unique_vals = list(df[self._classes].unique())
-        curr_node.next = []
+        curr_node.nexts = []
+        curr_node.splits = []
         if len(unique_vals) == 1:
-            curr_node.next.append(unique_vals[0])
-            print("final class:", unique_vals[0])
+            curr_node.nexts.append(unique_vals[0])
         else:
             unique_vals = list(df[best_att].unique())
             unique_dfs = []
             for val in unique_vals:
                 unique_dfs.append(df[df[best_att] == val])
 
-            for unique_df in unique_dfs:
-                unique_vals = list(unique_df[self._classes].unique())
-                if len(unique_vals) == 1:
-                    curr_node.next.append(unique_vals[0])
-                    print("final class:", unique_vals[0])
+            print("unique df length", len(unique_dfs), "unique val length", len(unique_vals))
+            for i in range(len(unique_vals)):
+                unique_df = unique_dfs[i]
+                val = unique_vals[i]
+                new_unique_vals = list(unique_df[self._classes].unique())
+
+                curr_node.splits.append(val)
+                if len(new_unique_vals) == 1:
+                    curr_node.nexts.append(new_unique_vals[0])
                 else:
                     new_best_att = self.calc_best_att(unique_df)
                     new_node = Node(new_best_att)
-                    curr_node.next.append(new_node)
-                    print("new best att:", new_best_att)
+                    curr_node.nexts.append(new_node)
                     self.add_node(unique_df, new_best_att, new_node)
+
+
+    def print_sub_tree(self, node):
+        if type(node) == str:
+            print(node)
+        else:
+            print(node.data)
+            print(node.splits)
+            if type(node.nexts) != str:
+                for i in range(len(node.nexts)):
+                    next_node = node.nexts[i]
+                    self.print_sub_tree(next_node)
+
+
+    def print_tree(self):
+        self.print_sub_tree(self._tree_head)
+
+
+    def check_test_set(self):
+        total_correct = 0
+        for row in self._test_df.iterrows():
+            print(row)
+            self.pass_thru_tree(row)
+
+
+    def start_tree(self, row):
+        self.pass_thru_tree(row, self._tree_head)
+
+
+    def pass_thru_tree(self, row, node):
+
 
 
     def calc_information_gain(self, attribute):
@@ -95,10 +128,11 @@ class DecisionTree:
 def main():
     data = pd.read_csv("sample.txt")
     cols = list(data.columns)
-    tree_one = DecisionTree(cols[4], cols[0:4], data, 1)
-
-
-
+    tree_one = DecisionTree(cols[4], cols[0:4], data)
+    tree_one.print_tree()
+    print("train df \n", tree_one._train_df)
+    print("test df \n", tree_one._test_df)
+    tree_one.check_test_set()
 
 if __name__ == "__main__":
     main()
