@@ -4,9 +4,11 @@ import numpy as np
 from node import Node
 
 class DecisionTree:
-    def __init__(self, classes, attributes, data, train=0.70):
+    def __init__(self, classes, attributes, data, train=0.70, max_height=50):
         self._classes = classes
         self._attributes = attributes
+        self._max_height = max_height
+
         mask = np.random.rand(len(data)) < train
         self._train_df = data[mask]
         self._test_df = data[~mask]
@@ -53,16 +55,16 @@ class DecisionTree:
     def create_tree(self):
         best_att = self.calc_best_att(self._train_df)
         self._tree_head.data = best_att
-        self.add_node(self._train_df, best_att, self._tree_head)
+        self.add_node(self._train_df, best_att, self._tree_head, 1)
 
 
-    def add_node(self, df, best_att, curr_node):
+    def add_node(self, df, best_att, curr_node, curr_height):
         unique_decs = list(df[self._classes].unique())
         curr_node.nexts = []
         curr_node.splits = []
         if len(unique_decs) == 1:
             curr_node.nexts.append(unique_decs[0])
-        else:
+        elif curr_height <= self._max_height:
             unique_vals = list(df[best_att].unique())
             unique_dfs = []
             for val in unique_vals:
@@ -81,8 +83,10 @@ class DecisionTree:
                     new_best_att = self.calc_best_att(unique_df)
                     new_node = Node(new_best_att)
                     curr_node.nexts.append(new_node)
-                    self.add_node(unique_df, new_best_att, new_node)
-
+                    self.add_node(unique_df, new_best_att, new_node, curr_height + 1)
+        else:
+            max_decs = df.groupby(self._classes)[self._classes].count().idxmax()
+            curr_node.nexts.append(max_decs)
 
     def print_sub_tree(self, node):
         if type(node) == str:
@@ -101,13 +105,16 @@ class DecisionTree:
 
 
     def check_test_set(self):
-        total_correct = 0
-        for index, row in self._test_df.iterrows():
-            # print(row)
-            total_correct += self.start_tree(row)
+        if len(self._test_df) == 0:
+            return "No test data to test!"
+        else:
+            total_correct = 0
+            for index, row in self._test_df.iterrows():
+                # print(row)
+                total_correct += self.start_tree(row)
 
-        # print(total_correct)
-        return total_correct / len(self._test_df)
+            # print(total_correct)
+            return total_correct / len(self._test_df)
 
     def start_tree(self, row):
         return self.pass_thru_tree(row, self._tree_head)
@@ -126,6 +133,7 @@ class DecisionTree:
                 # print("rip")
                 return 0
         else:
+            # print("node", node)
             curr_att = node.data
             val_in_row = row[curr_att]
             if val_in_row not in node.splits:
@@ -150,11 +158,11 @@ class DecisionTree:
 def main():
     data = pd.read_csv("sample.txt")
     cols = list(data.columns)
-    tree_one = DecisionTree(cols[4], cols[0:4], data)
-    # tree_one.print_tree()
-    # print("train df \n", tree_one._train_df)
-    # print("test df \n", tree_one._test_df)
-    # tree_one.check_test_set()
+    tree_one = DecisionTree(cols[4], cols[0:4], data, 0.5, 1)
+    tree_one.print_tree()
+    print("train df \n", tree_one._train_df)
+    print("test df \n", tree_one._test_df)
+    tree_one.check_test_set()
     print("accuracy", tree_one.check_test_set())
 
 if __name__ == "__main__":
