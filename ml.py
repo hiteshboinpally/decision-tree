@@ -40,6 +40,7 @@ class DecisionTree:
         best_attribute = self._attributes[0]
         best_information_gain = 0
         for att in self._attributes:
+            # print(att)
             att_values = df.groupby([att])[self._classes].count()
             att_gain = dec_entropy
 
@@ -153,16 +154,126 @@ class DecisionTree:
     def get_test_accuracy(self):
         return self.check_set(self._train_df)
 
+def set_months(date):
+  month_num = int(date[5:7])
+  if month_num < 4:
+    return "Winter"
+  elif month_num < 7:
+    return "Spring"
+  elif month_num < 10:
+    return "Summer"
+  else:
+    return "Winter"
+
+def set_faren(temp, suffix):
+  temp = int(temp)
+  if temp < 33:
+    return "Low " + suffix
+  elif temp < 70:
+    return "Mid " + suffix
+  else:
+    return "High " + suffix
+
+def set_temps(temp):
+  return set_faren(temp, "temperature")
+
+def set_dew_points(temp):
+  if temp == '-':
+    return "Unknown dew points"
+  else:
+    return set_faren(temp, "dew points")
+
+def set_humid_percent(percent):
+  if percent == '-':
+    return "Unknown humidity"
+
+  percent = int(percent)
+  if percent < 33:
+    return "Low humidity"
+  elif percent < 66:
+    return "Mid humidity"
+  else:
+    return "High humidity"
+
+def set_sea_level(pressure):
+  if pressure == '-':
+    return "Unknown Sea Pressure"
+
+  pressure = float(pressure)
+  if pressure < 29.883:
+    return "Low Sea Pressure"
+  elif pressure < 30.3563:
+    return "Mid Sea Pressure"
+  else:
+    return "High Sea Pressure"
+
+def set_visibility(visibility):
+  if visibility == '-':
+    return "Unknown Visibility"
+
+  visibility = float(visibility)
+  if visibility < 3.33:
+    return "Low Visibility"
+  elif visibility < 6.66:
+    return "Mid Visibility"
+  else:
+    return "High Visibility"
+
+def set_wind_mph(wind_mph):
+  if wind_mph == '-':
+    return "Unknown Wind"
+
+  wind_mph = float(wind_mph)
+  if wind_mph < 4:
+    return "Low Wind"
+  elif wind_mph < 7:
+    return "Mid Wind"
+  else:
+    return "High Wind"
+
+def setup_weather_data():
+    data = pd.read_csv("ml-data/austin_weather_data.csv")
+    updated_df = []
+
+    updated_df.append(data["Date"].apply(set_months))
+    updated_df.append(data["TempHighF"].apply(set_temps))
+    updated_df.append(data["TempAvgF"].apply(set_temps))
+    updated_df.append(data["TempLowF"].apply(set_temps))
+    updated_df.append(data["DewPointHighF"].apply(set_dew_points))
+    updated_df.append(data["DewPointAvgF"].apply(set_dew_points))
+    updated_df.append(data["DewPointLowF"].apply(set_dew_points))
+    updated_df.append(data["HumidityHighPercent"].apply(set_humid_percent))
+    updated_df.append(data["HumidityAvgPercent"].apply(set_humid_percent))
+    updated_df.append(data["HumidityLowPercent"].apply(set_humid_percent))
+    updated_df.append(data["SeaLevelPressureHighInches"].apply(set_sea_level))
+    updated_df.append(data["SeaLevelPressureAvgInches"].apply(set_sea_level))
+    updated_df.append(data["SeaLevelPressureLowInches"].apply(set_sea_level))
+    updated_df.append(data["VisibilityHighMiles"].apply(set_visibility))
+    updated_df.append(data["VisibilityAvgMiles"].apply(set_visibility))
+    updated_df.append(data["VisibilityLowMiles"].apply(set_visibility))
+    updated_df.append(data["WindHighMPH"].apply(set_wind_mph))
+    updated_df.append(data["WindAvgMPH"].apply(set_wind_mph))
+    final_data = pd.DataFrame(updated_df).T
+
+    return final_data
 
 def main():
-    data = pd.read_csv("sample.txt")
-    cols = list(data.columns)
-    tree_one = DecisionTree(cols[4], cols[0:4], data)
-    tree_one.print_tree()
-    print("train df \n", tree_one._train_df)
-    print("val df \n", tree_one._val_df)
-    print("test df \n", tree_one._test_df)
-    print("accuracy", tree_one.get_test_accuracy())
+    # data = pd.read_csv("ml-data/sample.txt")
+    # cols = list(data.columns)
+    # tree_one = DecisionTree(cols[4], cols[0:4], data)
+    # tree_one.print_tree()
+    # print("train df \n", tree_one._train_df)
+    # print("val df \n", tree_one._val_df)
+    # print("test df \n", tree_one._test_df)
+    # print("accuracy", tree_one.get_test_accuracy())
+
+    weather_data = setup_weather_data()
+    weather_cols = list(weather_data.columns)
+    weather_classes = weather_cols[2]
+    weather_features = weather_cols[0:2]
+    weather_features.extend(weather_cols[3:])
+    tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 5)
+    print("accuracy", tree.get_test_accuracy())
 
 
 if __name__ == "__main__":
