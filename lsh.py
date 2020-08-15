@@ -43,11 +43,15 @@ class LSH:
                     k+=1
             signature_matrix.append(signature_matrix_row)
         print(signature_matrix)
+
+
 def main():
-    data_one = open(r"hello_one.txt","r")
-    data_two = open(r"hello_two.txt","r")
-    data_three = open(r"hello_three.txt","r")
+    data_one = open("hello_one.txt","r")
+    data_two = open("hello_two.txt","r")
+    data_three = open("hello_three.txt","r")
     data = [data_one.read(), data_two.read(), data_three.read()]
     LSH(data)
-if _name_ == "_main_":
+
+
+if __name__ == "__main__":
     main()
