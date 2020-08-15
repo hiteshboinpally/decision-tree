@@ -4,17 +4,28 @@ import numpy as np
 from node import Node
 
 class DecisionTree:
-    def __init__(self, classes, attributes, data, train=0.70, max_height=50):
+    def __init__(self, classes, attributes, data, train=0.70, max_height=10, desired_acc=0.75):
         self._classes = classes
         self._attributes = attributes
         self._max_height = max_height
+        self._desired_acc = desired_acc
 
-        mask = np.random.rand(len(data)) < train
-        self._train_df = data[mask]
-        self._test_df = data[~mask]
+        is_train = np.random.rand(len(data)) < train
+        self._train_df = data[is_train]
+        leftover_df = data[~is_train]
+        is_val = np.random.rand(len(leftover_df)) < (1 - train)
+        self._val_df = leftover_df[is_val]
+        self._test_df = leftover_df[~is_val]
         self._tree_head = Node()
 
         self.create_tree()
+        val_score = self.check_set(self._val_df)
+        print('val_score', val_score)
+        while ((type(val_score) != str) and val_score < self._desired_acc):
+            self._max_height -= 1
+            self.create_tree()
+            val_score = self.check_set(self._val_df)
+            print('val_score', val_score)
 
 
     def calc_best_att(self, df):
@@ -56,6 +67,7 @@ class DecisionTree:
         best_att = self.calc_best_att(self._train_df)
         self._tree_head.data = best_att
         self.add_node(self._train_df, best_att, self._tree_head, 1)
+
 
 
     def add_node(self, df, best_att, curr_node, curr_height):
@@ -104,17 +116,18 @@ class DecisionTree:
         self.print_sub_tree(self._tree_head)
 
 
-    def check_test_set(self):
-        if len(self._test_df) == 0:
-            return "No test data to test!"
+    def check_set(self, data):
+        if len(data) == 0:
+            return "No data to find the accuracy of!"
         else:
             total_correct = 0
-            for index, row in self._test_df.iterrows():
+            for index, row in data.iterrows():
                 # print(row)
                 total_correct += self.start_tree(row)
 
             # print(total_correct)
-            return total_correct / len(self._test_df)
+            return total_correct / len(data)
+
 
     def start_tree(self, row):
         return self.pass_thru_tree(row, self._tree_head)
@@ -145,25 +158,19 @@ class DecisionTree:
             return self.pass_thru_tree(row, node.nexts[next_node_index])
 
 
-    def calc_information_gain(self, attribute):
-        # calculate the information gain for the given attribute
-        pass
-
-
-    def calc_entropy(self, attribute):
-        # calculate the entropy for the given attribute
-        pass
+    def get_test_accuracy(self):
+        return self.check_set(self._train_df)
 
 
 def main():
     data = pd.read_csv("sample.txt")
     cols = list(data.columns)
-    tree_one = DecisionTree(cols[4], cols[0:4], data, 0.5, 1)
+    tree_one = DecisionTree(cols[4], cols[0:4], data)
     tree_one.print_tree()
     print("train df \n", tree_one._train_df)
+    print("val df \n", tree_one._val_df)
     print("test df \n", tree_one._test_df)
-    tree_one.check_test_set()
-    print("accuracy", tree_one.check_test_set())
+    print("accuracy", tree_one.get_test_accuracy())
 
 if __name__ == "__main__":
     main()
