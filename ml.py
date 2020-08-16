@@ -32,6 +32,7 @@ class DecisionTree:
         is_val = np.random.rand(len(leftover_df)) < (1 - train)
         self._val_df = leftover_df[is_val]
         self._test_df = leftover_df[~is_val]
+
         self._curr_tree_head = Node()
         self._best_tree_head = Node()
 
@@ -45,7 +46,7 @@ class DecisionTree:
             curr_val_acc = self.get_val_accuracy()
             self._val_accs.append(curr_val_acc)
             if curr_val_acc > best_val_acc:
-              self._best_tree_head = self._curr_tree_head
+                self._best_tree_head = self._curr_tree_head
 
 
     def calc_best_att(self, df):
