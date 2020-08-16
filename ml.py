@@ -5,7 +5,22 @@ from node import Node
 
 
 class DecisionTree:
-    def __init__(self, classes, attributes, data, train=0.70, max_height=10, desired_acc=0.75):
+    """
+    A Decision Tree class that allows for classification of data into categories based on
+    features of the data.
+    """
+    def __init__(self, classes, attributes, data, train=0.70, max_height=10):
+        """
+        Constructs the actual decision tree model based on the given parameters.
+
+        :param classes: The name of the column in the given data corresponding to classes.
+        :param attributes: A list of the names of the column in the given data corresponding to
+                           attributes.
+        :param data: The data to create the tree as a pandas DataFrame.
+        :param train: The percentage of the data to split into the training set. The remaining data
+                      is split half/half into validation and testing data. Assumed to be a float.
+        :param max_height: The max height of the tree to begin. Assumed to be an integer.
+        """
         self._classes = classes
         self._attributes = attributes
         self._max_height = max_height
@@ -21,14 +36,23 @@ class DecisionTree:
 
         self.create_tree()
         val_score = self.check_set(self._val_df)
-        print('val_score', val_score)
+        # print('val_score', val_score)
         while ((type(val_score) != str) and val_score < self._desired_acc):
             self._max_height -= 1
             self.create_tree()
             val_score = self.check_set(self._val_df)
-            print('val_score', val_score)
+            # print('val_score', val_score)
+
 
     def calc_best_att(self, df):
+        """
+        Calculates the current best attribute of the dataframe, based on which feature gives us
+        the greatest information gain for the attribute we are trying to classify.
+
+        :param df: The pandas DataFrame containing the data for which to calculate the current
+                   attribute that gives the best information gain. Assumed to contain a column
+                   with name = self._classes.
+        """
         classes_counts = df.groupby(self._classes)[self._attributes[0]].count()
         total = len(df)
         dec_entropy = 0
@@ -63,12 +87,26 @@ class DecisionTree:
                 best_attribute = att
         return best_attribute
 
+
     def create_tree(self):
+        """
+        creates the actual Decision Tree based on entropy and information gain.
+        """
         best_att = self.calc_best_att(self._train_df)
         self._tree_head.data = best_att
         self.add_node(self._train_df, best_att, self._tree_head, 1)
 
+
     def add_node(self, df, best_att, curr_node, curr_height):
+        """
+        Recursively adds nodes to the decision Tree until it reaches the max-height or classifies
+        the entire training dataset.
+
+        :param df: the pandas DataFrame that we are classifying.
+        :param best_att: the current node's best attribute to split on. Assumed to be a String.
+        :param curr_node: the current node of the tree that we're on. Assumed to be a Node.
+        :param curr_height: the current height of the overall tree. Assumed to be an int.
+        """
         unique_decs = list(df[self._classes].unique())
         curr_node.nexts = []
         curr_node.splits = []
@@ -98,7 +136,13 @@ class DecisionTree:
             max_decs = df.groupby(self._classes)[self._classes].count().idxmax()
             curr_node.nexts.append(max_decs)
 
+
     def print_sub_tree(self, node):
+        """
+        Recursively prints out the tree starting at the current node.
+
+        :param node: The current node of the tree to print. Assumed to be a Node object.
+        """
         if type(node) == str:
             print(node)
         else:
@@ -109,10 +153,20 @@ class DecisionTree:
                     next_node = node.nexts[i]
                     self.print_sub_tree(next_node)
 
+
     def print_tree(self):
+        """
+        Prints out the decision tree.
+        """
         self.print_sub_tree(self._tree_head)
 
+
     def check_set(self, data):
+        """
+        Checks the accuracy of the Decision Tree based on the given data.
+
+        :param data: The DataFrame for which to check the accuracy of the model.
+        """
         if len(data) == 0:
             return "No data to find the accuracy of!"
         else:
@@ -124,10 +178,25 @@ class DecisionTree:
             # print(total_correct)
             return total_correct / len(data)
 
+
     def start_tree(self, row):
+        """
+        Starts the process of passing through the tree and checking the given row against the output
+        of the tree.
+
+        :param row: The row for the tree to classify.
+        """
         return self.pass_thru_tree(row, self._tree_head)
 
+
     def pass_thru_tree(self, row, node):
+        """
+        Recursively passes through the tree node by node and attempts to classify the given row in
+        the instance's Decision Tree.
+
+        :param row: The row for the tree to classify.
+        :param node: the current node of the tree.
+        """
         # print(type(row))
         if type(node) == str:
             # print("desc", node)
@@ -151,8 +220,29 @@ class DecisionTree:
             # print("next_node_index", next_node_index)
             return self.pass_thru_tree(row, node.nexts[next_node_index])
 
-    def get_test_accuracy(self):
+
+    def get_val_accuracy(self):
+        """
+        Returns the accuracy of the model on the validation set.
+        """
+        return self.check_set(self._val_df)
+
+
+    def get_train_accuracy(self):
+        """
+        Returns the accuracy of the model on the training set.
+        """
         return self.check_set(self._train_df)
+
+
+    def get_test_accuracy(self):
+        """
+        Returns the accuracy of the model on the testing set.
+        """
+        return self.check_set(self._test_df)
+
+
+
 
 def set_months(date):
   month_num = int(date[5:7])
@@ -165,6 +255,7 @@ def set_months(date):
   else:
     return "Winter"
 
+
 def set_faren(temp, suffix):
   temp = int(temp)
   if temp < 33:
@@ -174,14 +265,17 @@ def set_faren(temp, suffix):
   else:
     return "High " + suffix
 
+
 def set_temps(temp):
   return set_faren(temp, "temperature")
+
 
 def set_dew_points(temp):
   if temp == '-':
     return "Unknown dew points"
   else:
     return set_faren(temp, "dew points")
+
 
 def set_humid_percent(percent):
   if percent == '-':
@@ -195,6 +289,7 @@ def set_humid_percent(percent):
   else:
     return "High humidity"
 
+
 def set_sea_level(pressure):
   if pressure == '-':
     return "Unknown Sea Pressure"
@@ -206,6 +301,7 @@ def set_sea_level(pressure):
     return "Mid Sea Pressure"
   else:
     return "High Sea Pressure"
+
 
 def set_visibility(visibility):
   if visibility == '-':
@@ -219,6 +315,7 @@ def set_visibility(visibility):
   else:
     return "High Visibility"
 
+
 def set_wind_mph(wind_mph):
   if wind_mph == '-':
     return "Unknown Wind"
@@ -230,6 +327,7 @@ def set_wind_mph(wind_mph):
     return "Mid Wind"
   else:
     return "High Wind"
+
 
 def setup_weather_data():
     data = pd.read_csv("ml-data/austin_weather_data.csv")
@@ -272,7 +370,8 @@ def main():
     weather_classes = weather_cols[2]
     weather_features = weather_cols[0:2]
     weather_features.extend(weather_cols[3:])
-    tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 5)
+    tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
+    # tree.print_tree()
     print("accuracy", tree.get_test_accuracy())
 
 
