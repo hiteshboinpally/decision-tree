@@ -10,7 +10,7 @@ class DecisionTree:
     A Decision Tree class that allows for classification of data into categories based on
     features of the data.
     """
-    def __init__(self, classes, attributes, data, train=0.70, max_height=10):
+    def __init__(self, classes, attributes, data, train=0.70, max_height=10, get_best_val_score=False):
         """
         Constructs the actual decision tree model based on the given parameters.
 
@@ -34,20 +34,28 @@ class DecisionTree:
         self._test_df = leftover_df[~is_val]
 
         self._curr_tree_head = Node()
-        self._best_tree_head = Node()
 
         self._heights = list(range(1, self._max_height + 1))
         self._val_accs = []
 
+        if get_best_val_score:
+            self.create_best_tree()
+        else:
+            self.create_tree(max_height)
+
+
+    def create_best_tree(self):
         best_val_acc = 0
         for i in self._heights:
             # print(i)
             self.create_tree(i)
             curr_val_acc = self.get_val_accuracy()
-            if (type(curr_val_acc) == int):
+            best_tree_head = Node()
+            if (type(curr_val_acc) == float):
               self._val_accs.append(curr_val_acc)
               if curr_val_acc > best_val_acc:
-                  self._best_tree_head = self._curr_tree_head
+                  best_tree_head = self._curr_tree_head
+        self._curr_tree_head = best_tree_head
 
 
     def calc_best_att(self, df):
@@ -367,8 +375,10 @@ def setup_weather_data():
 def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height=10, num_trials=10):
     heights = range(max_height)
     all_val_accs = []
+    print("plotting heights of trree versus validation accuracy...")
     for i in range(num_trials):
-        tree = DecisionTree(classes, features, data, train_perc, max_height)
+        print("trial #" + str(i))
+        tree = DecisionTree(classes, features, data, train_perc, max_height, True)
         x, val_accs = tree.get_heights_and_val_accs()
         all_val_accs.append(val_accs)
 
@@ -379,12 +389,13 @@ def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height
     plt.xlabel('Height of Tree')
     plt.ylabel('Average Validation Accuracy')
     plt.title('Height of Tree vs Average Validation Accuracy')
-    plt.savefig('ml-plots/height_vs_vals.png')
+    plt.savefig('ml-plots/height_vs_vals_test.png')
 
 
 def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_trials=10):
     train_perc = np.linspace(0.1,1,11)
     all_test_accs = []
+    print("plotting training percentage versus testing accuracy...")
     for i in range(num_trials):
         print("trial #" + str(i))
         curr_test_accs = []
@@ -413,8 +424,8 @@ def main():
     # weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
     # weather_tree.print_tree()
     # print("accuracy", weather_tree.get_test_accuracy())
-    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15)
-    plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=1)
+    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=3, num_trials=2)
+    plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
 
 
 if __name__ == "__main__":
