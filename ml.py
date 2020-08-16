@@ -41,12 +41,13 @@ class DecisionTree:
 
         best_val_acc = 0
         for i in self._heights:
-            print(i)
+            # print(i)
             self.create_tree(i)
             curr_val_acc = self.get_val_accuracy()
-            self._val_accs.append(curr_val_acc)
-            if curr_val_acc > best_val_acc:
-                self._best_tree_head = self._curr_tree_head
+            if (type(curr_val_acc) == int):
+              self._val_accs.append(curr_val_acc)
+              if curr_val_acc > best_val_acc:
+                  self._best_tree_head = self._curr_tree_head
 
 
     def calc_best_att(self, df):
@@ -363,11 +364,11 @@ def setup_weather_data():
     return final_data
 
 
-def plot_heights_vs_val_accs(classes, features, data, train_pec=0.7, max_height=10, num_trials=10):
+def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height=10, num_trials=10):
     heights = range(max_height)
     all_val_accs = []
     for i in range(num_trials):
-        tree = DecisionTree(classes, features, data, train_pec, max_height)
+        tree = DecisionTree(classes, features, data, train_perc, max_height)
         x, val_accs = tree.get_heights_and_val_accs()
         all_val_accs.append(val_accs)
 
@@ -381,6 +382,28 @@ def plot_heights_vs_val_accs(classes, features, data, train_pec=0.7, max_height=
     plt.savefig('ml-plots/height_vs_vals.png')
 
 
+def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_trials=10):
+    train_perc = np.linspace(0.1,1,11)
+    all_test_accs = []
+    for i in range(num_trials):
+        print("trial #" + str(i))
+        curr_test_accs = []
+        for j in train_perc:
+            tree = DecisionTree(classes, features, data, j, max_height)
+            curr_test_accs.append(tree.get_test_accuracy())
+        all_test_accs.append(curr_test_accs)
+
+    results = pd.DataFrame(all_test_accs, columns=list(train_perc))
+    results = results.mean()
+
+    plt.plot(list(results.index), results.values, "-b")
+    plt.plot(list(results.index), results.values, "ro")
+    plt.xlabel('Percentage of Data for Training Set')
+    plt.ylabel('Average Test Accuracy')
+    plt.title('Percentage of Training Set Data vs Test Accuracy')
+    plt.savefig('ml-plots/train_perc_vs_tests.png')
+
+
 def main():
     weather_data = setup_weather_data()
     weather_cols = list(weather_data.columns)
@@ -390,7 +413,8 @@ def main():
     # weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
     # weather_tree.print_tree()
     # print("accuracy", weather_tree.get_test_accuracy())
-    plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15)
+    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15)
+    plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=1)
 
 
 if __name__ == "__main__":
