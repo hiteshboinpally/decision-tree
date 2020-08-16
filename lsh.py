@@ -26,6 +26,7 @@ class LSH:
                     document_in_current_shingle.append(0)
             shingles_document.append(document_in_current_shingle)
         return shingles_document
+
     def min_hash(self, shingles_document):
         num_shingles = len(shingles_document)
         perm_indices = list(range(num_shingles))
@@ -40,7 +41,7 @@ class LSH:
                 for document in row:
                     if signature_matrix_row[k] == -1 and document == 1:
                         signature_matrix_row[k] = index
-                    k+=1
+                    k += 1
             signature_matrix.append(signature_matrix_row)
         print(signature_matrix)
 

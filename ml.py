@@ -24,7 +24,6 @@ class DecisionTree:
         self._classes = classes
         self._attributes = attributes
         self._max_height = max_height
-        self._desired_acc = desired_acc
 
         is_train = np.random.rand(len(data)) < train
         self._train_df = data[is_train]
@@ -46,12 +45,13 @@ class DecisionTree:
 
     def calc_best_att(self, df):
         """
-        Calculates the current best attribute of the dataframe, based on which feature gives us
-        the greatest information gain for the attribute we are trying to classify.
+        Determines the current best attribute of the data frame, by calculating the
+        information gain on each attribute that we are classifying on.
 
         :param df: The pandas DataFrame containing the data for which to calculate the current
                    attribute that gives the best information gain. Assumed to contain a column
                    with name = self._classes.
+        :returns best_attribute: the attribute with the most information gain
         """
         classes_counts = df.groupby(self._classes)[self._attributes[0]].count()
         total = len(df)
@@ -166,6 +166,7 @@ class DecisionTree:
         Checks the accuracy of the Decision Tree based on the given data.
 
         :param data: The DataFrame for which to check the accuracy of the model.
+        :returns a decimal: that represents the accuracy of the model
         """
         if len(data) == 0:
             return "No data to find the accuracy of!"
@@ -185,6 +186,9 @@ class DecisionTree:
         of the tree.
 
         :param row: The row for the tree to classify.
+        :returns method call:
+                             calls recursive method that is used to pass through the nodes of the decision tree, while
+                             comparing the given value to the output.
         """
         return self.pass_thru_tree(row, self._tree_head)
 
@@ -196,6 +200,8 @@ class DecisionTree:
 
         :param row: The row for the tree to classify.
         :param node: the current node of the tree.
+        :returns recursive method call:
+                in which the node parameter is updated to represents the next child node in the tree
         """
         # print(type(row))
         if type(node) == str:
@@ -224,6 +230,7 @@ class DecisionTree:
     def get_val_accuracy(self):
         """
         Returns the accuracy of the model on the validation set.
+        :returns a decimal: that represents the accuracy of the validation set.
         """
         return self.check_set(self._val_df)
 
@@ -231,6 +238,7 @@ class DecisionTree:
     def get_train_accuracy(self):
         """
         Returns the accuracy of the model on the training set.
+        :returns a decimal: that represents the accuracy of the train set.
         """
         return self.check_set(self._train_df)
 
@@ -238,6 +246,7 @@ class DecisionTree:
     def get_test_accuracy(self):
         """
         Returns the accuracy of the model on the testing set.
+        :returns a decimal: that represents the accuracy of the test set.
         """
         return self.check_set(self._test_df)
 
@@ -245,91 +254,150 @@ class DecisionTree:
 
 
 def set_months(date):
-  month_num = int(date[5:7])
-  if month_num < 4:
-    return "Winter"
-  elif month_num < 7:
-    return "Spring"
-  elif month_num < 10:
-    return "Summer"
-  else:
-    return "Winter"
+    """
+    Converts a date (Year-Month-Day) to a season for the Decision Tree
+
+    :param date: the date the data point occurred at
+    :returns a category: represents what season that data point occurred in.
+    """
+    month_num = int(date[5:7])
+    if month_num < 4:
+        return "Winter"
+    elif month_num < 7:
+        return "Spring"
+    elif month_num < 10:
+        return "Summer"
+    else:
+        return "Winter"
 
 
 def set_faren(temp, suffix):
-  temp = int(temp)
-  if temp < 33:
-    return "Low " + suffix
-  elif temp < 70:
-    return "Mid " + suffix
-  else:
-    return "High " + suffix
+    """
+    Converts a temperature (in Fahrenheit) to a category for the Decision Tree
+
+    :param temp: the temperature on a given day
+    :param suffix: the name of the category that we add to Low, Mid, and High (i.e. Temperature)
+    :returns a category: represents whether the temp is low (< 33), medium (<70), or high.
+    """
+    temp = int(temp)
+    if temp < 33:
+        return "Low " + suffix
+    elif temp < 70:
+        return "Mid " + suffix
+    else:
+        return "High " + suffix
 
 
 def set_temps(temp):
-  return set_faren(temp, "temperature")
+    """
+    Converts the temperature (in Fahrenheit) on a given day to a category for the Decision Tree
+
+    :param temp: the temperature on a given day
+    :returns a category: that returns Low temperature, Mid temperature, or High temperature
+    """
+    return set_faren(temp, "temperature")
 
 
 def set_dew_points(temp):
-  if temp == '-':
-    return "Unknown dew points"
-  else:
-    return set_faren(temp, "dew points")
+    """
+    Converts a dew point (in Fahrenheit) to a category for the Decision Tree
+
+    :param temp: the temperature on a given day
+    :returns a category: that returns Low dew points, Mid dew points, or High dew points
+                            or Unknown dew points if there was no value in that data point
+    """
+    if temp == '-':
+        return "Unknown dew points"
+    else:
+        return set_faren(temp, "dew points")
 
 
 def set_humid_percent(percent):
-  if percent == '-':
-    return "Unknown humidity"
+    """
+    Converts a the percentage humidity to a category for the Decision Tree
 
-  percent = int(percent)
-  if percent < 33:
-    return "Low humidity"
-  elif percent < 66:
-    return "Mid humidity"
-  else:
-    return "High humidity"
+    :param percent: the percent humidity on a given day
+    :returns a category: that returns Low humidity, Mid humidity, or High humidity
+                            or Unknown humidity if there was no value in that data point
+    """
+    if percent == '-':
+        return "Unknown humidity"
+    percent = int(percent)
+    if percent < 33:
+        return "Low humidity"
+    elif percent < 66:
+        return "Mid humidity"
+    else:
+        return "High humidity"
 
 
 def set_sea_level(pressure):
-  if pressure == '-':
-    return "Unknown Sea Pressure"
+    """
+    Converts a temperature (in Fahrenheit) to a category for the Decision Tree
 
-  pressure = float(pressure)
-  if pressure < 29.883:
-    return "Low Sea Pressure"
-  elif pressure < 30.3563:
-    return "Mid Sea Pressure"
-  else:
-    return "High Sea Pressure"
+    :param pressure: the percent pressure on a given day
+    :returns a category: that returns Low Sea Pressure, Mid Sea Pressure, or High Sea Pressure
+                            or Unknown Sea Pressure if there was no value in that data point
+    """
+    if pressure == '-':
+        return "Unknown Sea Pressure"
+
+    pressure = float(pressure)
+    if pressure < 29.883:
+        return "Low Sea Pressure"
+    elif pressure < 30.3563:
+        return "Mid Sea Pressure"
+    else:
+        return "High Sea Pressure"
 
 
 def set_visibility(visibility):
-  if visibility == '-':
-    return "Unknown Visibility"
+    """
+    Converts visibilty  (in miles) to a category for the Decision Tree
 
-  visibility = float(visibility)
-  if visibility < 3.33:
-    return "Low Visibility"
-  elif visibility < 6.66:
-    return "Mid Visibility"
-  else:
-    return "High Visibility"
+    :param visibility: the number of miles of visibility pressure on a given day
+    :returns a category: that returns Low Visibility, Mid Visibility, or High Visibility
+                            or Unknown Visibility if there was no value in that data point
+    """
+    if visibility == '-':
+        return "Unknown Visibility"
+
+    visibility = float(visibility)
+    if visibility < 3.33:
+        return "Low Visibility"
+    elif visibility < 6.66:
+        return "Mid Visibility"
+    else:
+        return "High Visibility"
 
 
 def set_wind_mph(wind_mph):
-  if wind_mph == '-':
-    return "Unknown Wind"
+    """
+    Converts the average wind speed (in MPH) to a category for the Decision Tree
 
-  wind_mph = float(wind_mph)
-  if wind_mph < 4:
-    return "Low Wind"
-  elif wind_mph < 7:
-    return "Mid Wind"
-  else:
-    return "High Wind"
+    :param wind_mph: the wind speed on a given day
+    :returns a category: that returns Low wind, Mid wind, or High wind
+                            or Unknown wind if there was no value in that data point
+    """
+    if wind_mph == '-':
+        return "Unknown Wind"
+    wind_mph = float(wind_mph)
+    if wind_mph < 4:
+        return "Low Wind"
+    elif wind_mph < 7:
+        return "Mid Wind"
+    else:
+        return "High Wind"
 
 
 def setup_weather_data():
+    """
+    Calls all the methods that replace the data within each point within a category and returns a new
+    list with all data points described in categories.
+
+    :returns a category: that returns Low dew points, Mid dew points, or High dew points
+                            or Unknown dew points if there was no value in that data point
+    """
     data = pd.read_csv("ml-data/austin_weather_data.csv")
     updated_df = []
 
