@@ -1,14 +1,21 @@
 import pandas as pd
 import random
+
+
 class LSH:
     def __init__(self, data):
         self.shingle_length = 3
-        self.num_permutations = 5
+        self.num_permutations = 6
+        self.num_rows_per_band = 2
+        self.num_buckets = 10
         self.num_documents = len(data)
         #perform shingling
         #minhashing
         shingles_document = self.shingling(data)
-        self.min_hash(shingles_document)
+        sig_matrix = self.min_hash(shingles_document)
+        similar_documents = self.lsh(sig_matrix)
+        print(similar_documents)
+
 
     def shingling(self, data):
         shingles = set()
@@ -26,6 +33,8 @@ class LSH:
                     document_in_current_shingle.append(0)
             shingles_document.append(document_in_current_shingle)
         return shingles_document
+
+
     def min_hash(self, shingles_document):
         num_shingles = len(shingles_document)
         perm_indices = list(range(num_shingles))
@@ -42,13 +51,32 @@ class LSH:
                         signature_matrix_row[k] = index
                     k+=1
             signature_matrix.append(signature_matrix_row)
-        print(signature_matrix)
+        return signature_matrix
+
+
+    def lsh(self, sig_matrix):
+        buckets = {}
+        similar_documents = []
+        for i in range(self.num_buckets):
+            similar_documents.append(set())
+        for i in range(0,self.num_permutations,self.num_rows_per_band):
+            current_rows = sig_matrix[i:i+self.num_rows_per_band]
+            for j in range(self.num_documents):
+                values_in_band = tuple([row[j] for row in current_rows])
+                bucket_in = hash(values_in_band) % self.num_buckets
+                if bucket_in not in buckets:
+                    buckets[bucket_in] = set()
+                buckets[bucket_in].add(j)
+            for index,docs in buckets.items():
+                if len(docs) > 1:
+                    similar_documents[index].update(docs)
+        return similar_documents
 
 
 def main():
-    data_one = open("hello_one.txt","r")
-    data_two = open("hello_two.txt","r")
-    data_three = open("hello_three.txt","r")
+    data_one = open(r"hello_one.txt", "r")
+    data_two = open(r"hello_two.txt", "r")
+    data_three = open(r"hello_three.txt", "r")
     data = [data_one.read(), data_two.read(), data_three.read()]
     LSH(data)
 

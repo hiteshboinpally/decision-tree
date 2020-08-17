@@ -416,16 +416,21 @@ def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_tri
 
 
 def main():
-    weather_data = setup_weather_data()
-    weather_cols = list(weather_data.columns)
-    weather_classes = weather_cols[2]
-    weather_features = weather_cols[0:2]
-    weather_features.extend(weather_cols[3:])
+    sample_data = pd.read_csv('ml-data/sample.txt')
+    sample_cols = list(sample_data.columns)
+    sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1)
+    sample_tree.print_tree()
+
+    # weather_data = setup_weather_data()
+    # weather_cols = list(weather_data.columns)
+    # weather_classes = weather_cols[2]
+    # weather_features = weather_cols[0:2]
+    # weather_features.extend(weather_cols[3:])
     # weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
     # weather_tree.print_tree()
     # print("accuracy", weather_tree.get_test_accuracy())
     # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=3, num_trials=2)
-    plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
+    # plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
 
 
 if __name__ == "__main__":
