@@ -55,7 +55,6 @@ class DecisionTree:
     def create_best_tree(self):
         best_val_acc = 0
         for i in self._heights:
-            # print(i)
             self.create_tree(i)
             curr_val_acc = self.get_val_accuracy()
             best_tree_head = Node()
@@ -87,7 +86,6 @@ class DecisionTree:
         best_attribute = self._attributes[0]
         best_information_gain = 0
         for att in self._attributes:
-            # print(att)
             att_values = df.groupby([att])[self._classes].count()
             att_gain = dec_entropy
 
@@ -171,10 +169,7 @@ class DecisionTree:
         else:
             total_correct = 0
             for index, row in data.iterrows():
-                # print(row)
                 total_correct += self.start_tree(row)
-
-            # print(total_correct)
             return total_correct / len(data)
 
 
@@ -246,11 +241,8 @@ class DecisionTree:
     def get_heights_and_val_accs(self):
       return self._heights, self._val_accs
 
-        # Function to print the inorder traversal
-
 
     def get_confusion_matrix(self):
-        print('labels:', self._test_labels)
         if len(self._true_preds) == 0:
             self.get_test_accuracy()
         return confusion_matrix(self._true_preds, self._model_preds, labels=self._test_labels)
@@ -262,17 +254,12 @@ class DecisionTree:
         elif type(node) == str:
             print(node)
         else:
-            # Total children count
             total = len(node.nexts)
-
-            # All the children except the last
             for i in range(total-1):
                 self.inorder(node.nexts[i])
 
-            # Print the current node's data
             print(node.data, node.splits)
 
-            # Last child
             self.inorder(node.nexts[total-1])
 
 def set_months(date):
@@ -463,7 +450,7 @@ def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height
     plt.xlabel('Height of Tree')
     plt.ylabel('Average Validation Accuracy')
     plt.title('Height of Tree vs Average Validation Accuracy')
-    plt.savefig('ml-plots/height_vs_vals_test.png')
+    plt.savefig('ml-plots/height_vs_vals.png')
 
 
 def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_trials=10):
@@ -497,18 +484,24 @@ def plot_confusion_matrix(tree):
     cf_matrix_df = pd.DataFrame(cf_matrix, columns=categories, index=categories)
     cf_matrix_df.index.name = 'Actual'
     cf_matrix_df.columns.name = 'Predicted'
-    print(cf_matrix_df)
 
-    plt.figure(figsize = (12,10))
-    sns.heatmap(cf_matrix_df, cmap='Blues', annot=True, fmt='g')
+    sns.set(font_scale=1.4)
+    plt.figure(figsize = (17,7))
+    ax = sns.heatmap(cf_matrix_df, cmap='Blues', annot=True, fmt='g')
+    plt.yticks(rotation=0)
+    ax.invert_yaxis()
+    plt.title('Confusion Matrix')
     plt.savefig('ml-plots/confusion_matrix.png')
+
+def sample_tree_algo():
+    sample_data = pd.read_csv('ml-data/sample.txt')
+    sample_cols = list(sample_data.columns)
+    sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1, max_height=2)
+    sample_tree.inorder(sample_tree._curr_tree_head)
 
 
 def main():
-    # sample_data = pd.read_csv('ml-data/sample.txt')
-    # sample_cols = list(sample_data.columns)
-    # sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1, max_height=2)
-    # sample_tree.inorder(sample_tree._curr_tree_head)
+    # sample_tree_algo()
 
     weather_data = setup_weather_data()
     weather_cols = list(weather_data.columns)
@@ -518,7 +511,6 @@ def main():
     weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 7)
     # weather_tree.inorder(weather_tree._curr_tree_head)
     plot_confusion_matrix(weather_tree)
-    print("accuracy", weather_tree.get_test_accuracy())
     # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15, num_trials=15)
     # plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
 
