@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from node import Node
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import math
 
 
 class DecisionTree:
@@ -33,10 +36,15 @@ class DecisionTree:
         self._val_df = leftover_df[is_val]
         self._test_df = leftover_df[~is_val]
 
+        self._test_labels = list(self._test_df[self._classes].unique())
+
         self._curr_tree_head = Node()
 
         self._heights = list(range(1, self._max_height + 1))
         self._val_accs = []
+
+        self._true_preds = []
+        self._model_preds =[]
 
         if get_best_val_score:
             self.create_best_tree()
@@ -127,13 +135,12 @@ class DecisionTree:
         curr_node.splits = []
         if len(unique_decs) == 1:
             curr_node.nexts.append(unique_decs[0])
-        elif curr_height <= max_height:
+        else:
             unique_vals = list(df[best_att].unique())
             unique_dfs = []
             for val in unique_vals:
                 unique_dfs.append(df[df[best_att] == val])
 
-            # print("unique df length", len(unique_dfs), "unique val length", len(unique_vals))
             for i in range(len(unique_vals)):
                 unique_df = unique_dfs[i]
                 val = unique_vals[i]
@@ -142,41 +149,17 @@ class DecisionTree:
                 curr_node.splits.append(val)
                 if len(new_unique_vals) == 1:
                     curr_node.nexts.append(new_unique_vals[0])
-                else:
+                elif curr_height < max_height - 1:
                     new_best_att = self.calc_best_att(unique_df)
                     new_node = Node(new_best_att)
                     curr_node.nexts.append(new_node)
                     self.add_node(unique_df, new_best_att, new_node, curr_height + 1, max_height)
-        else:
-            max_decs = df.groupby(self._classes)[self._classes].count().idxmax()
-            curr_node.nexts.append(max_decs)
+                else:
+                    max_decs = unique_df.groupby(self._classes)[self._classes].count().idxmax()
+                    curr_node.nexts.append(max_decs)
 
 
-    def print_sub_tree(self, node):
-        """
-        Recursively prints out the tree starting at the current node.
-
-        :param node: The current node of the tree to print. Assumed to be a Node object.
-        """
-        if type(node) == str:
-            print(node)
-        else:
-            print(node.data)
-            print(node.splits)
-            if type(node.nexts) != str:
-                for i in range(len(node.nexts)):
-                    next_node = node.nexts[i]
-                    self.print_sub_tree(next_node)
-
-
-    def print_tree(self):
-        """
-        Prints out the decision tree.
-        """
-        self.print_sub_tree(self._curr_tree_head)
-
-
-    def check_set(self, data):
+    def check_set(self, data, isTest=False):
         """
         Checks the accuracy of the Decision Tree based on the given data.
 
@@ -218,27 +201,21 @@ class DecisionTree:
         :returns recursive method call:
                 in which the node parameter is updated to represents the next child node in the tree
         """
-        # print(type(row))
         if type(node) == str:
-            # print("desc", node)
             row_desc = row[self._classes]
-            # print("row desc", row_desc)
+            self._model_preds.append(node)
+            self._true_preds.append(row_desc)
             if node == row_desc:
-                # print("we're good!")
                 return 1
             else:
-                # print("rip")
                 return 0
         else:
-            # print("node", node)
             curr_att = node.data
             val_in_row = row[curr_att]
             if val_in_row not in node.splits:
                 next_node_index = np.random.randint(len(node.nexts))
             else:
                 next_node_index = node.splits.index(val_in_row)
-            # print("val_in_row", val_in_row)
-            # print("next_node_index", next_node_index)
             return self.pass_thru_tree(row, node.nexts[next_node_index])
 
 
@@ -263,12 +240,40 @@ class DecisionTree:
         Returns the accuracy of the model on the testing set.
         :returns a decimal: that represents the accuracy of the test set.
         """
-        return self.check_set(self._test_df)
+        return self.check_set(self._test_df, True)
 
 
     def get_heights_and_val_accs(self):
       return self._heights, self._val_accs
 
+        # Function to print the inorder traversal
+
+
+    def get_confusion_matrix(self):
+        print('labels:', self._test_labels)
+        if len(self._true_preds) == 0:
+            self.get_test_accuracy()
+        return confusion_matrix(self._true_preds, self._model_preds, labels=self._test_labels)
+
+
+    def inorder(self, node):
+        if node == None:
+            return
+        elif type(node) == str:
+            print(node)
+        else:
+            # Total children count
+            total = len(node.nexts)
+
+            # All the children except the last
+            for i in range(total-1):
+                self.inorder(node.nexts[i])
+
+            # Print the current node's data
+            print(node.data, node.splits)
+
+            # Last child
+            self.inorder(node.nexts[total-1])
 
 def set_months(date):
     """
@@ -444,7 +449,7 @@ def setup_weather_data():
 def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height=10, num_trials=10):
     heights = range(max_height)
     all_val_accs = []
-    print("plotting heights of trree versus validation accuracy...")
+    print("plotting heights of tree versus validation accuracy...")
     for i in range(num_trials):
         print("trial #" + str(i))
         tree = DecisionTree(classes, features, data, train_perc, max_height, True)
@@ -484,21 +489,37 @@ def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_tri
     plt.savefig('ml-plots/train_perc_vs_tests.png')
 
 
-def main():
-    sample_data = pd.read_csv('ml-data/sample.txt')
-    sample_cols = list(sample_data.columns)
-    sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1)
-    sample_tree.print_tree()
+def plot_confusion_matrix(tree):
+    print("plotting confusion matrix...")
+    cf_matrix = tree.get_confusion_matrix()
+    categories = tree._test_labels
 
-    # weather_data = setup_weather_data()
-    # weather_cols = list(weather_data.columns)
-    # weather_classes = weather_cols[2]
-    # weather_features = weather_cols[0:2]
-    # weather_features.extend(weather_cols[3:])
-    # weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
-    # weather_tree.print_tree()
-    # print("accuracy", weather_tree.get_test_accuracy())
-    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=3, num_trials=2)
+    cf_matrix_df = pd.DataFrame(cf_matrix, columns=categories, index=categories)
+    cf_matrix_df.index.name = 'Actual'
+    cf_matrix_df.columns.name = 'Predicted'
+    print(cf_matrix_df)
+
+    plt.figure(figsize = (12,10))
+    sns.heatmap(cf_matrix_df, cmap='Blues', annot=True, fmt='g')
+    plt.savefig('ml-plots/confusion_matrix.png')
+
+
+def main():
+    # sample_data = pd.read_csv('ml-data/sample.txt')
+    # sample_cols = list(sample_data.columns)
+    # sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1, max_height=2)
+    # sample_tree.inorder(sample_tree._curr_tree_head)
+
+    weather_data = setup_weather_data()
+    weather_cols = list(weather_data.columns)
+    weather_classes = weather_cols[2]
+    weather_features = weather_cols[0:2]
+    weather_features.extend(weather_cols[3:])
+    weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 7)
+    # weather_tree.inorder(weather_tree._curr_tree_head)
+    plot_confusion_matrix(weather_tree)
+    print("accuracy", weather_tree.get_test_accuracy())
+    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15, num_trials=15)
     # plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
 
 
