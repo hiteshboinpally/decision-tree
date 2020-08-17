@@ -83,11 +83,11 @@ class LSH:
 
 
 def main():
-    data_one = open(r"hello_one.txt", "r")
-    data_two = open(r"hello_two.txt", "r")
-    data_three = open(r"hello_three.txt", "r")
-    data = [data_one.read(), data_two.read(), data_three.read()]
-    LSH(data, 3, 6, 2, 10)
+    data = []
+    for i in range(1,23):
+        data.append(open("ra-data/strain"+str(i)+".txt","r").read())
+    print(data[0])
+    LSH(data, 5, 100, 5, 50)
 
 
 if __name__ == "__main__":
