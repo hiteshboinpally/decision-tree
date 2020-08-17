@@ -1,6 +1,7 @@
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
+import time
 
 
 class LSH:
@@ -12,13 +13,24 @@ class LSH:
         self.num_documents = len(data)
         #perform shingling
         #minhashing
+
+        start_time = time.time()
         shingles_document = self.shingling(data)
+
         if calc_jaccard:
             self.jaccard_similarity = self.jaccard(shingles_document)
+            self.jaccard_time = time.time()
+
         sig_matrix = self.min_hash(shingles_document)
         similar_documents = self.lsh(sig_matrix)
         self.sim_docs_set = set()
         self.get_set_of_sim_docs(similar_documents)
+
+        self.time_taken = time.time() - start_time
+
+
+    def get_runtime(self):
+        return self.time_taken
 
 
     def get_set_of_sim_docs(self, similar_documents):
@@ -104,7 +116,7 @@ class LSH:
         return False
 
 
-def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, num_trials=10, max_perms=15):
+def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, max_perms=15, num_trials=10):
     file_one_idx = random.randint(0,len(data))
     file_two_idx = file_one_idx
     while file_two_idx == file_one_idx:
@@ -114,8 +126,6 @@ def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, num_tr
     test_files = [file_one, file_two]
     jaccard_lsh = LSH(test_files, shingle_length, 1, rows_per_band, buckets, True)
     jaccard_similarity = jaccard_lsh.jaccard_similarity
-    # print('file one', file_one_idx)
-    # print('file two', file_two_idx)
     min_hash_similarities = []
     for i in range(0, max_perms, rows_per_band):
         print("calculating permuation", i)
@@ -124,7 +134,6 @@ def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, num_tr
             curr_lsh = LSH(data, shingle_length, i, rows_per_band, buckets)
             if curr_lsh.is_similar(file_one_idx, file_two_idx):
                 similarity_ct += 1
-            # print('similarity ct', similarity_ct)
         min_hash_similarities.append(similarity_ct / num_trials)
 
     print('jaccard similarity', jaccard_similarity)
@@ -139,7 +148,69 @@ def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, num_tr
     plt.xlabel('Number of Permutations')
     plt.ylabel('Percentage of Similarity')
     plt.title('Permutations vs Similarity Percentage')
-    plt.savefig('ra-plots/perms_vs_jaccard.png')
+    plt.savefig('ra-plots/perms_vs_jaccard_trial_2.png')
+
+
+def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials=10):
+    file_one_idx = random.randint(0,len(data))
+    file_two_idx = file_one_idx
+    while file_two_idx == file_one_idx:
+        file_two_idx = random.randint(0,len(data))
+    # print("data", len(data))
+    # print('file_one_idx', file_one_idx)
+    file_one = data[file_one_idx]
+    file_two = data[file_two_idx]
+    test_files = [file_one, file_two]
+    jaccard_lsh = LSH(test_files, shingle_length, 1, 1, 1, True)
+    jaccard_similarity = jaccard_lsh.jaccard_similarity
+    min_hash_similarities = []
+    for i in range(1, max_rows_per_band):
+        print("calculating rows per band", i)
+        similarity_ct = 0
+        for j in range(num_trials):
+            curr_lsh = LSH(data, shingle_length, i * 5, i, buckets)
+            if curr_lsh.is_similar(file_one_idx, file_two_idx):
+                similarity_ct += 1
+        min_hash_similarities.append(similarity_ct / num_trials)
+
+    print('jaccard similarity', jaccard_similarity)
+    print('min hash similarities', min_hash_similarities)
+
+    permutations = list(range(1, max_rows_per_band))
+    jaccard_sims = [jaccard_similarity] * len(permutations)
+
+    plt.plot(permutations, min_hash_similarities, "ro", label='min hash')
+    plt.plot(permutations, jaccard_sims, "b--", label='jaccard')
+    plt.legend(loc='lower right')
+    plt.xlabel('Number of Rows per Band')
+    plt.ylabel('Percentage of Similarity')
+    plt.title('Rows per Band vs Similarity Percentage')
+    plt.savefig('ra-plots/rows_vs_jaccard.png')
+
+
+def document_ct_vs_runtime(data, shingle_length, permutations, rows_per_band, buckets, num_trials=10):
+    lsh_times = []
+    for i in range(1, len(data)):
+        print('document numbers', i)
+        lsh_time = 0
+        for j in range(num_trials):
+            curr_lsh = LSH(data, shingle_length, permutations, rows_per_band, buckets)
+            curr_lsh_time = curr_lsh.get_runtime()
+            lsh_time += curr_lsh_time
+        lsh_times.append(lsh_time / num_trials)
+
+    # print('jaccard times', jaccard_times)
+    # print('min hash times', lsh_times)
+
+    document_cts = range(1, len(data))
+
+    # plt.plot(document_cts, jaccard_times, "-r", label='Jaccard Runtime')
+    plt.plot(document_cts, lsh_times, "-b", label='LSH Runtime')
+    plt.legend(loc='lower right')
+    plt.xlabel('Number of Documents')
+    plt.ylabel('Runtime (s)')
+    plt.title('Number of Documents vs Runtime in Seconds')
+    plt.savefig('ra-plots/doc_cts_vs_runtime.png')
 
 def main():
     # data = []
@@ -149,7 +220,7 @@ def main():
     # LSH(data, 3, 4, 2, 15)
 
     data = []
-    for i in range(1,23):
+    for i in range(1, 23):
         bad_chars = ['\n', 'W']
         file_string = open("ra-data/strain" + str(i) + ".txt","r").read()
         # file_string = filter(lambda i: i not in bad_chars, file_string)
@@ -163,7 +234,9 @@ def main():
     # #data_analysis = [data[file_one], data[file_two]]
     # data_analysis = [data[0], data[3]]
     # LSH(data_analysis, 5, 100, 10, 50)
-    permutations_vs_jaccard(data, 5, 10, 50, 100, 100)
+    # permutations_vs_jaccard(data, 5, 10, 50, 100, 100)
+    rows_vs_jaccard(data, 5, 20, 50, 100)
+    # document_ct_vs_runtime(data, 5, 50, 5, 50, 100)
     #LSH(data, 5, 100, 10, 50)
 
 
