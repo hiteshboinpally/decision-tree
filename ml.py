@@ -45,6 +45,10 @@ class DecisionTree:
 
 
     def create_best_tree(self):
+        """
+        Determines the Decision Tree with the best accuracy out of trees with different height
+        hyper-parameters.
+        """
         best_val_acc = 0
         for i in self._heights:
             # print(i)
@@ -201,7 +205,7 @@ class DecisionTree:
         of the tree.
 
         :param row: The row for the tree to classify.
-        :returns method call:
+        :return method call:
                              calls recursive method that is used to pass through the nodes of the decision tree, while
                              comparing the given value to the output.
         """
@@ -215,7 +219,7 @@ class DecisionTree:
 
         :param row: The row for the tree to classify.
         :param node: the current node of the tree.
-        :returns recursive method call:
+        :return recursive method call:
                 in which the node parameter is updated to represents the next child node in the tree
         """
         # print(type(row))
@@ -245,7 +249,7 @@ class DecisionTree:
     def get_val_accuracy(self):
         """
         Returns the accuracy of the model on the validation set.
-        :returns a decimal: that represents the accuracy of the validation set.
+        :return a decimal: that represents the accuracy of the validation set.
         """
         return self.check_set(self._val_df)
 
@@ -253,7 +257,7 @@ class DecisionTree:
     def get_train_accuracy(self):
         """
         Returns the accuracy of the model on the training set.
-        :returns a decimal: that represents the accuracy of the train set.
+        :return a decimal: that represents the accuracy of the train set.
         """
         return self.check_set(self._train_df)
 
@@ -261,7 +265,7 @@ class DecisionTree:
     def get_test_accuracy(self):
         """
         Returns the accuracy of the model on the testing set.
-        :returns a decimal: that represents the accuracy of the test set.
+        :return a decimal: that represents the accuracy of the test set.
         """
         return self.check_set(self._test_df)
 
@@ -275,7 +279,7 @@ def set_months(date):
     Converts a date (Year-Month-Day) to a season for the Decision Tree
 
     :param date: the date the data point occurred at
-    :returns a category: represents what season that data point occurred in.
+    :return a category: represents what season that data point occurred in.
     """
     month_num = int(date[5:7])
     if month_num < 4:
@@ -294,7 +298,7 @@ def set_faren(temp, suffix):
 
     :param temp: the temperature on a given day
     :param suffix: the name of the category that we add to Low, Mid, and High (i.e. Temperature)
-    :returns a category: represents whether the temp is low (< 33), medium (<70), or high.
+    :return a category: represents whether the temp is low (< 33), medium (<70), or high.
     """
     temp = int(temp)
     if temp < 33:
@@ -310,7 +314,7 @@ def set_temps(temp):
     Converts the temperature (in Fahrenheit) on a given day to a category for the Decision Tree
 
     :param temp: the temperature on a given day
-    :returns a category: that returns Low temperature, Mid temperature, or High temperature
+    :return a category: that returns Low temperature, Mid temperature, or High temperature
     """
     return set_faren(temp, "temperature")
 
@@ -320,7 +324,7 @@ def set_dew_points(temp):
     Converts a dew point (in Fahrenheit) to a category for the Decision Tree
 
     :param temp: the temperature on a given day
-    :returns a category: that returns Low dew points, Mid dew points, or High dew points
+    :return a category: that returns Low dew points, Mid dew points, or High dew points
                             or Unknown dew points if there was no value in that data point
     """
     if temp == '-':
@@ -334,7 +338,7 @@ def set_humid_percent(percent):
     Converts a the percentage humidity to a category for the Decision Tree
 
     :param percent: the percent humidity on a given day
-    :returns a category: that returns Low humidity, Mid humidity, or High humidity
+    :return a category: that returns Low humidity, Mid humidity, or High humidity
                             or Unknown humidity if there was no value in that data point
     """
     if percent == '-':
@@ -353,7 +357,7 @@ def set_sea_level(pressure):
     Converts a temperature (in Fahrenheit) to a category for the Decision Tree
 
     :param pressure: the percent pressure on a given day
-    :returns a category: that returns Low Sea Pressure, Mid Sea Pressure, or High Sea Pressure
+    :return a category: that returns Low Sea Pressure, Mid Sea Pressure, or High Sea Pressure
                             or Unknown Sea Pressure if there was no value in that data point
     """
     if pressure == '-':
@@ -373,7 +377,7 @@ def set_visibility(visibility):
     Converts visibilty  (in miles) to a category for the Decision Tree
 
     :param visibility: the number of miles of visibility pressure on a given day
-    :returns a category: that returns Low Visibility, Mid Visibility, or High Visibility
+    :return a category: that returns Low Visibility, Mid Visibility, or High Visibility
                             or Unknown Visibility if there was no value in that data point
     """
     if visibility == '-':
@@ -393,7 +397,7 @@ def set_wind_mph(wind_mph):
     Converts the average wind speed (in MPH) to a category for the Decision Tree
 
     :param wind_mph: the wind speed on a given day
-    :returns a category: that returns Low wind, Mid wind, or High wind
+    :return a category: that returns Low wind, Mid wind, or High wind
                             or Unknown wind if there was no value in that data point
     """
     if wind_mph == '-':
@@ -413,8 +417,7 @@ def setup_weather_data():
     Calls all the methods that replace the data within each point within a category and returns a new
     list with all data points described in categories.
 
-    :returns a category: that returns Low dew points, Mid dew points, or High dew points
-                            or Unknown dew points if there was no value in that data point
+    :return a list: of all the attributes of each weather data point
     """
     data = pd.read_csv("ml-data/austin_weather_data.csv")
     updated_df = []
@@ -443,6 +446,17 @@ def setup_weather_data():
 
 
 def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height=10, num_trials=10):
+    """
+    Creates graph with the Decision Tree Height as the x-axis and validation accuracy as the y-axis
+
+    :param classes: The name of the column in the given data corresponding to classes.
+    :param features: A list of the names of the column in the given data corresponding to
+                           attributes.
+    :param data: the set of all data points that contains info on Austin weather
+    :param train_perc: percentage of total data set that is dedicated to the training set
+    :param max_height: Maximum height of the Decision Tree (Hyper-paramter)
+    :param num_trials: Number of times we will run the Decision Tree with given max_height parameter
+    """
     heights = range(max_height)
     all_val_accs = []
     print("plotting heights of trree versus validation accuracy...")
@@ -463,6 +477,17 @@ def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height
 
 
 def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_trials=10):
+    """
+    Creates graph with the Training Percentage as the x-axis and the Test Accuracy as the y-axis
+
+    :param classes: The name of the column in the given data corresponding to classes.
+    :param features: A list of the names of the column in the given data corresponding to
+                           attributes.
+    :param data: the set of all data points that contains info on Austin weather
+    :param train_perc: percentage of total data set that is dedicated to the training set
+    :param max_height: Maximum height of the Decision Tree (Hyper-paramter)
+    :param num_trials: Number of times we will run the Decision Tree with given max_height parameter
+    """
     train_perc = np.linspace(0.1,1,11)
     all_test_accs = []
     print("plotting training percentage versus testing accuracy...")
