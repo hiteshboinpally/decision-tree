@@ -22,6 +22,7 @@ class DecisionTree:
                       is split half/half into validation and testing data. Assumed to be a float.
         :param max_height: The max height of the tree to begin. Assumed to be an integer.
         """
+        
         self._classes = classes
         self._attributes = attributes
         self._max_height = max_height
