@@ -380,6 +380,7 @@ def set_wind_mph(wind_mph):
                             or Unknown wind if there was no value in that data point
     """
     if wind_mph == '-':
+
         return "Unknown Wind"
     wind_mph = float(wind_mph)
     if wind_mph < 4:
