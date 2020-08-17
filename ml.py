@@ -1,6 +1,7 @@
 # relevant libraries to import
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from node import Node
 
 
@@ -9,7 +10,7 @@ class DecisionTree:
     A Decision Tree class that allows for classification of data into categories based on
     features of the data.
     """
-    def __init__(self, classes, attributes, data, train=0.70, max_height=10):
+    def __init__(self, classes, attributes, data, train=0.70, max_height=10, get_best_val_score=False):
         """
         Constructs the actual decision tree model based on the given parameters.
 
@@ -31,16 +32,30 @@ class DecisionTree:
         is_val = np.random.rand(len(leftover_df)) < (1 - train)
         self._val_df = leftover_df[is_val]
         self._test_df = leftover_df[~is_val]
-        self._tree_head = Node()
 
-        self.create_tree()
-        val_score = self.check_set(self._val_df)
-        # print('val_score', val_score)
-        while ((type(val_score) != str) and val_score < self._desired_acc):
-            self._max_height -= 1
-            self.create_tree()
-            val_score = self.check_set(self._val_df)
-            # print('val_score', val_score)
+        self._curr_tree_head = Node()
+
+        self._heights = list(range(1, self._max_height + 1))
+        self._val_accs = []
+
+        if get_best_val_score:
+            self.create_best_tree()
+        else:
+            self.create_tree(max_height)
+
+
+    def create_best_tree(self):
+        best_val_acc = 0
+        for i in self._heights:
+            # print(i)
+            self.create_tree(i)
+            curr_val_acc = self.get_val_accuracy()
+            best_tree_head = Node()
+            if (type(curr_val_acc) == float):
+              self._val_accs.append(curr_val_acc)
+              if curr_val_acc > best_val_acc:
+                  best_tree_head = self._curr_tree_head
+        self._curr_tree_head = best_tree_head
 
 
     def calc_best_att(self, df):
@@ -88,16 +103,16 @@ class DecisionTree:
         return best_attribute
 
 
-    def create_tree(self):
+    def create_tree(self, height):
         """
         creates the actual Decision Tree based on entropy and information gain.
         """
         best_att = self.calc_best_att(self._train_df)
-        self._tree_head.data = best_att
-        self.add_node(self._train_df, best_att, self._tree_head, 1)
+        self._curr_tree_head.data = best_att
+        self.add_node(self._train_df, best_att, self._curr_tree_head, 1, height)
 
 
-    def add_node(self, df, best_att, curr_node, curr_height):
+    def add_node(self, df, best_att, curr_node, curr_height, max_height):
         """
         Recursively adds nodes to the decision Tree until it reaches the max-height or classifies
         the entire training dataset.
@@ -112,7 +127,7 @@ class DecisionTree:
         curr_node.splits = []
         if len(unique_decs) == 1:
             curr_node.nexts.append(unique_decs[0])
-        elif curr_height <= self._max_height:
+        elif curr_height <= max_height:
             unique_vals = list(df[best_att].unique())
             unique_dfs = []
             for val in unique_vals:
@@ -131,7 +146,7 @@ class DecisionTree:
                     new_best_att = self.calc_best_att(unique_df)
                     new_node = Node(new_best_att)
                     curr_node.nexts.append(new_node)
-                    self.add_node(unique_df, new_best_att, new_node, curr_height + 1)
+                    self.add_node(unique_df, new_best_att, new_node, curr_height + 1, max_height)
         else:
             max_decs = df.groupby(self._classes)[self._classes].count().idxmax()
             curr_node.nexts.append(max_decs)
@@ -158,7 +173,7 @@ class DecisionTree:
         """
         Prints out the decision tree.
         """
-        self.print_sub_tree(self._tree_head)
+        self.print_sub_tree(self._curr_tree_head)
 
 
     def check_set(self, data):
@@ -190,7 +205,7 @@ class DecisionTree:
                              calls recursive method that is used to pass through the nodes of the decision tree, while
                              comparing the given value to the output.
         """
-        return self.pass_thru_tree(row, self._tree_head)
+        return self.pass_thru_tree(row, self._curr_tree_head)
 
 
     def pass_thru_tree(self, row, node):
@@ -251,6 +266,8 @@ class DecisionTree:
         return self.check_set(self._test_df)
 
 
+    def get_heights_and_val_accs(self):
+      return self._heights, self._val_accs
 
 
 def set_months(date):
@@ -423,24 +440,66 @@ def setup_weather_data():
 
     return final_data
 
-def main():
-    # data = pd.read_csv("ml-data/sample.txt")
-    # cols = list(data.columns)
-    # tree_one = DecisionTree(cols[4], cols[0:4], data)
-    # tree_one.print_tree()
-    # print("train df \n", tree_one._train_df)
-    # print("val df \n", tree_one._val_df)
-    # print("test df \n", tree_one._test_df)
-    # print("accuracy", tree_one.get_test_accuracy())
 
-    weather_data = setup_weather_data()
-    weather_cols = list(weather_data.columns)
-    weather_classes = weather_cols[2]
-    weather_features = weather_cols[0:2]
-    weather_features.extend(weather_cols[3:])
-    tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
-    # tree.print_tree()
-    print("accuracy", tree.get_test_accuracy())
+def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height=10, num_trials=10):
+    heights = range(max_height)
+    all_val_accs = []
+    print("plotting heights of trree versus validation accuracy...")
+    for i in range(num_trials):
+        print("trial #" + str(i))
+        tree = DecisionTree(classes, features, data, train_perc, max_height, True)
+        x, val_accs = tree.get_heights_and_val_accs()
+        all_val_accs.append(val_accs)
+
+    results = pd.DataFrame(all_val_accs, columns=heights)
+    results = results.mean()
+    plt.plot(list(results.index), results.values, "-b")
+    plt.plot(list(results.index), results.values, "ro")
+    plt.xlabel('Height of Tree')
+    plt.ylabel('Average Validation Accuracy')
+    plt.title('Height of Tree vs Average Validation Accuracy')
+    plt.savefig('ml-plots/height_vs_vals_test.png')
+
+
+def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_trials=10):
+    train_perc = np.linspace(0.1,1,11)
+    all_test_accs = []
+    print("plotting training percentage versus testing accuracy...")
+    for i in range(num_trials):
+        print("trial #" + str(i))
+        curr_test_accs = []
+        for j in train_perc:
+            tree = DecisionTree(classes, features, data, j, max_height)
+            curr_test_accs.append(tree.get_test_accuracy())
+        all_test_accs.append(curr_test_accs)
+
+    results = pd.DataFrame(all_test_accs, columns=list(train_perc))
+    results = results.mean()
+
+    plt.plot(list(results.index), results.values, "-b")
+    plt.plot(list(results.index), results.values, "ro")
+    plt.xlabel('Percentage of Data for Training Set')
+    plt.ylabel('Average Test Accuracy')
+    plt.title('Percentage of Training Set Data vs Test Accuracy')
+    plt.savefig('ml-plots/train_perc_vs_tests.png')
+
+
+def main():
+    sample_data = pd.read_csv('ml-data/sample.txt')
+    sample_cols = list(sample_data.columns)
+    sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1)
+    sample_tree.print_tree()
+
+    # weather_data = setup_weather_data()
+    # weather_cols = list(weather_data.columns)
+    # weather_classes = weather_cols[2]
+    # weather_features = weather_cols[0:2]
+    # weather_features.extend(weather_cols[3:])
+    # weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 10)
+    # weather_tree.print_tree()
+    # print("accuracy", weather_tree.get_test_accuracy())
+    # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=3, num_trials=2)
+    # plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
 
 
 if __name__ == "__main__":
