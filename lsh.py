@@ -12,12 +12,11 @@ class LSH:
         #perform shingling
         #minhashing
         shingles_document = self.shingling(data)
+        jaccard_similarity = self.jaccard(shingles_document)
+        print(jaccard_similarity)
         sig_matrix = self.min_hash(shingles_document)
         similar_documents = self.lsh(sig_matrix)
         self.sim_docs_set = set()
-        self.get_set_of_sim_docs(similar_documents)
-
-        print(self.sim_docs_set)
 
 
     def get_set_of_sim_docs(self, similar_documents):
@@ -30,7 +29,7 @@ class LSH:
         shingles = set()
         data_as_shingles = []
         for data_file in data:
-            for i in range(len(data_file)-self.shingle_length):
+            for i in range(len(data_file)-self.shingle_length): 
                 shingles.add(data_file[i:i+self.shingle_length])
         shingles_document = []
         for shingle in shingles:
@@ -42,6 +41,14 @@ class LSH:
                     document_in_current_shingle.append(0)
             shingles_document.append(document_in_current_shingle)
         return shingles_document
+
+    def jaccard(self, shingles_document):
+        intersection_count = 0
+        union_count = len(shingles_document)
+        for i in range(len(shingles_document)):
+            if shingles_document[i][0] == 1 and shingles_document[i][1] == 1:
+                intersection_count += 1
+        return float(intersection_count) / float(union_count)
 
     def min_hash(self, shingles_document):
         num_shingles = len(shingles_document)
@@ -68,6 +75,7 @@ class LSH:
         for i in range(self.num_buckets):
             similar_documents.append(set())
         for i in range(0,self.num_permutations,self.num_rows_per_band):
+            buckets.clear()
             current_rows = sig_matrix[i:i+self.num_rows_per_band]
             for j in range(self.num_documents):
                 values_in_band = tuple([row[j] for row in current_rows])
@@ -83,11 +91,29 @@ class LSH:
 
 
 def main():
+    # data = []
+    # data.append(open("hello_one.txt","r").read())
+    # data.append(open("hello_two.txt","r").read())
+    # data.append(open("hello_three.txt","r").read())
+    # LSH(data, 3, 4, 2, 15)
+
     data = []
     for i in range(1,23):
-        data.append(open("ra-data/strain"+str(i)+".txt","r").read())
-    print(data[0])
-    LSH(data, 5, 100, 5, 50)
+        bad_chars = ['\n', 'W']
+        file_string = open("ra-data/strain"+str(i)+".txt","r").read()
+        file_string = filter(lambda i: i not in bad_chars, file_string)
+        data.append(file_string)
+    file_one = random.randint(0,len(data))
+    file_two = file_one
+    while file_two == file_one:
+        file_two = random.randint(0,len(data))
+    #data_analysis = [data[file_one], data[file_two]]
+    data_analysis = [data[0], data[3]]
+    LSH(data_analysis, 5, 100, 10, 50)
+    #LSH(data, 5, 100, 10, 50)
+
+        
+    
 
 
 if __name__ == "__main__":
