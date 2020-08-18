@@ -2,10 +2,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from node import Node
+from Decision_Tree.node import Node
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-import math
 
 
 class DecisionTree:
@@ -14,6 +13,7 @@ class DecisionTree:
     features of the data.
 
     """
+
     def __init__(self, classes, attributes, data, train=0.70, max_height=10, get_best_val_score=False):
         """
         Constructs the actual decision tree model based on the given parameters.
@@ -46,13 +46,12 @@ class DecisionTree:
         self._val_accs = []
 
         self._true_preds = []
-        self._model_preds =[]
+        self._model_preds = []
 
         if get_best_val_score:
             self.create_best_tree()
         else:
             self.create_tree(max_height)
-
 
     def create_best_tree(self):
         """
@@ -64,12 +63,11 @@ class DecisionTree:
             self.create_tree(i)
             curr_val_acc = self.get_val_accuracy()
             best_tree_head = Node()
-            if (type(curr_val_acc) == float):
-              self._val_accs.append(curr_val_acc)
-              if curr_val_acc > best_val_acc:
-                  best_tree_head = self._curr_tree_head
+            if type(curr_val_acc) == float:
+                self._val_accs.append(curr_val_acc)
+                if curr_val_acc > best_val_acc:
+                    best_tree_head = self._curr_tree_head
         self._curr_tree_head = best_tree_head
-
 
     def calc_best_att(self, df):
         """
@@ -114,7 +112,6 @@ class DecisionTree:
                 best_attribute = att
         return best_attribute
 
-
     def create_tree(self, height):
         """
         creates the actual Decision Tree based on entropy and information gain.
@@ -122,7 +119,6 @@ class DecisionTree:
         best_att = self.calc_best_att(self._train_df)
         self._curr_tree_head.data = best_att
         self.add_node(self._train_df, best_att, self._curr_tree_head, 1, height)
-
 
     def add_node(self, df, best_att, curr_node, curr_height, max_height):
         """
@@ -162,13 +158,12 @@ class DecisionTree:
                     max_decs = unique_df.groupby(self._classes)[self._classes].count().idxmax()
                     curr_node.nexts.append(max_decs)
 
-
     def check_set(self, data, isTest=False):
         """
         Checks the accuracy of the Decision Tree based on the given data.
 
         :param data: The DataFrame for which to check the accuracy of the model.
-        :returns a decimal: that represents the accuracy of the model
+        :return a decimal: that represents the accuracy of the model
         """
         if len(data) == 0:
             return "No data to find the accuracy of!"
@@ -178,19 +173,16 @@ class DecisionTree:
                 total_correct += self.start_tree(row, isTest)
             return total_correct / len(data)
 
-
     def start_tree(self, row, isTest):
         """
         Starts the process of passing through the tree and checking the given row against the output
         of the tree.
 
         :param row: The row for the tree to classify.
-        :return method call:
-                             calls recursive method that is used to pass through the nodes of the decision tree, while
+        :return method call: calls recursive method that is used to pass through the nodes of the decision tree, while
                              comparing the given value to the output.
         """
         return self.pass_thru_tree(row, self._curr_tree_head)
-
 
     def pass_thru_tree(self, row, node, isTest):
         """
@@ -220,7 +212,6 @@ class DecisionTree:
                 next_node_index = node.splits.index(val_in_row)
             return self.pass_thru_tree(row, node.nexts[next_node_index])
 
-
     def get_val_accuracy(self):
         """
         Returns the accuracy of the model on the validation set.
@@ -228,7 +219,6 @@ class DecisionTree:
         :return a decimal: that represents the accuracy of the validation set.
         """
         return self.check_set(self._val_df)
-
 
     def get_train_accuracy(self):
         """
@@ -238,7 +228,6 @@ class DecisionTree:
         """
         return self.check_set(self._train_df)
 
-
     def get_test_accuracy(self):
         """
         Returns the accuracy of the model on the testing set.
@@ -247,30 +236,42 @@ class DecisionTree:
         """
         return self.check_set(self._test_df, True)
 
-
     def get_heights_and_val_accs(self):
-      return self._heights, self._val_accs
+        """
+        Returns the height of the decision tree and accuracy of the model
 
+        :return the height of the decision tree and accuracy of the model
+        """
+        return self._heights, self._val_accs
 
     def get_confusion_matrix(self):
+        """
+        Creates the confusion matrix which displays True positives, True Negatives, False Positives
+        and False Negatives.
+        :return: a matrix: thats rows are the number of data points classified by the model to that attribute
+                            and the columns are the number of data points of a given attribute.
+        """
         if len(self._true_preds) == 0:
             self.get_test_accuracy()
         return confusion_matrix(self._true_preds, self._model_preds, labels=self._test_labels)
 
-
     def inorder(self, node):
+        """
+        Inorder traversal of the n-ary Decision Tree where we print out the value at each node
+        :param node: the root node of the Decision Tree
+        """
         if node == None:
             return
         elif type(node) == str:
             print(node)
         else:
             total = len(node.nexts)
-            for i in range(total-1):
+            for i in range(total - 1):
                 self.inorder(node.nexts[i])
 
             print(node.data, node.splits)
 
-            self.inorder(node.nexts[total-1])
+            self.inorder(node.nexts[total - 1])
 
 
 def set_months(date):
@@ -400,7 +401,6 @@ def set_wind_mph(wind_mph):
                             or Unknown wind if there was no value in that data point
     """
     if wind_mph == '-':
-
         return "Unknown Wind"
     wind_mph = float(wind_mph)
     if wind_mph < 4:
@@ -419,26 +419,19 @@ def setup_weather_data():
     :return a list: of all the attributes of each weather data point
     """
     data = pd.read_csv("ml-data/austin_weather_data.csv")
-    updated_df = []
+    updated_df = [data["Date"].apply(set_months), data["TempHighF"].apply(set_temps), data["TempAvgF"].apply(set_temps),
+                  data["TempLowF"].apply(set_temps), data["DewPointHighF"].apply(set_dew_points),
+                  data["DewPointAvgF"].apply(set_dew_points), data["DewPointLowF"].apply(set_dew_points),
+                  data["HumidityHighPercent"].apply(set_humid_percent),
+                  data["HumidityAvgPercent"].apply(set_humid_percent),
+                  data["HumidityLowPercent"].apply(set_humid_percent),
+                  data["SeaLevelPressureHighInches"].apply(set_sea_level),
+                  data["SeaLevelPressureAvgInches"].apply(set_sea_level),
+                  data["SeaLevelPressureLowInches"].apply(set_sea_level),
+                  data["VisibilityHighMiles"].apply(set_visibility), data["VisibilityAvgMiles"].apply(set_visibility),
+                  data["VisibilityLowMiles"].apply(set_visibility), data["WindHighMPH"].apply(set_wind_mph),
+                  data["WindAvgMPH"].apply(set_wind_mph)]
 
-    updated_df.append(data["Date"].apply(set_months))
-    updated_df.append(data["TempHighF"].apply(set_temps))
-    updated_df.append(data["TempAvgF"].apply(set_temps))
-    updated_df.append(data["TempLowF"].apply(set_temps))
-    updated_df.append(data["DewPointHighF"].apply(set_dew_points))
-    updated_df.append(data["DewPointAvgF"].apply(set_dew_points))
-    updated_df.append(data["DewPointLowF"].apply(set_dew_points))
-    updated_df.append(data["HumidityHighPercent"].apply(set_humid_percent))
-    updated_df.append(data["HumidityAvgPercent"].apply(set_humid_percent))
-    updated_df.append(data["HumidityLowPercent"].apply(set_humid_percent))
-    updated_df.append(data["SeaLevelPressureHighInches"].apply(set_sea_level))
-    updated_df.append(data["SeaLevelPressureAvgInches"].apply(set_sea_level))
-    updated_df.append(data["SeaLevelPressureLowInches"].apply(set_sea_level))
-    updated_df.append(data["VisibilityHighMiles"].apply(set_visibility))
-    updated_df.append(data["VisibilityAvgMiles"].apply(set_visibility))
-    updated_df.append(data["VisibilityLowMiles"].apply(set_visibility))
-    updated_df.append(data["WindHighMPH"].apply(set_wind_mph))
-    updated_df.append(data["WindAvgMPH"].apply(set_wind_mph))
     final_data = pd.DataFrame(updated_df).T
 
     return final_data
@@ -487,7 +480,7 @@ def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_tri
     :param max_height: Maximum height of the Decision Tree (Hyper-paramter)
     :param num_trials: Number of times we will run the Decision Tree with given max_height parameter
     """
-    train_perc = np.linspace(0.1,1,11)
+    train_perc = np.linspace(0.1, 1, 11)
     all_test_accs = []
     print("plotting training percentage versus testing accuracy...")
     for i in range(num_trials):
@@ -510,6 +503,12 @@ def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_tri
 
 
 def plot_confusion_matrix(tree):
+    """
+    Creates a heat plot for the confusion matrix
+
+    :param tree: The Decision Tree
+    :return: heat plot of the confusion matrix
+    """
     print("plotting confusion matrix...")
     cf_matrix = tree.get_confusion_matrix()
     categories = tree._test_labels
@@ -519,18 +518,21 @@ def plot_confusion_matrix(tree):
     cf_matrix_df.columns.name = 'Predicted'
 
     sns.set(font_scale=1.4)
-    plt.figure(figsize = (17,7))
+    plt.figure(figsize=(17, 7))
     ax = sns.heatmap(cf_matrix_df, cmap='Blues', annot=True, fmt='g')
     plt.yticks(rotation=0)
     ax.invert_yaxis()
     plt.title('Confusion Matrix')
     plt.savefig('ml-plots/confusion_matrix.png')
 
+
+"""
 def sample_tree_algo():
     sample_data = pd.read_csv('ml-data/sample.txt')
     sample_cols = list(sample_data.columns)
     sample_tree = DecisionTree(sample_cols[4], sample_cols[0:4], sample_data, 1, max_height=2)
     sample_tree.inorder(sample_tree._curr_tree_head)
+"""
 
 
 def main():
@@ -542,11 +544,11 @@ def main():
     weather_features = weather_cols[0:2]
     weather_features.extend(weather_cols[3:])
     weather_tree = DecisionTree(weather_classes, weather_features, weather_data, 0.7, 7)
+    print("accuracy", weather_tree.get_test_accuracy())
     # weather_tree.inorder(weather_tree._curr_tree_head)
-    plot_confusion_matrix(weather_tree)
+    # plot_confusion_matrix(weather_tree)
     # plot_heights_vs_val_accs(weather_classes, weather_features, weather_data, max_height=15, num_trials=15)
     # plot_train_perc_vs_test_accs(weather_classes, weather_features, weather_data, max_height=7, num_trials=10)
-
 
 if __name__ == "__main__":
     main()
