@@ -1,19 +1,11 @@
 import pandas as pd
 import random
+import matplotlib.pyplot as plt
+import time
 
 
 class LSH:
-    def __init__(self, data, shingle_length, permutations, num_rows_per_band, num_buckets):
-        """
-        An Locality Sensitive Hashing program that places similar documents in the same hash bucket with high
-        probability and dissimilar documents in different buckets with high probability.
-
-        :param data: a list of documents or genomes
-        :param shingle_length: the length of each gram/shingle of the document/data point
-        :param permutations: the number of permutations that will be used in the min-Hash Function
-        :param num_rows_per_band: the number of rows in the band where we will hash column values into
-        :param num_buckets: the number of buckets in each band
-        """
+    def __init__(self, data, shingle_length, permutations, num_rows_per_band, num_buckets, calc_jaccard=False):
         self.shingle_length = shingle_length
         self.num_permutations = permutations
         self.num_rows_per_band = num_rows_per_band
@@ -21,36 +13,37 @@ class LSH:
         self.num_documents = len(data)
         #perform shingling
         #minhashing
+
+        start_time = time.time()
         shingles_document = self.shingling(data)
-        jaccard_similarity = self.jaccard(shingles_document)
-        print(jaccard_similarity)
+
+        if calc_jaccard:
+            self.jaccard_similarity = self.jaccard(shingles_document)
+            self.jaccard_time = time.time()
+
         sig_matrix = self.min_hash(shingles_document)
         similar_documents = self.lsh(sig_matrix)
         self.sim_docs_set = set()
+        self.get_set_of_sim_docs(similar_documents)
+
+        self.time_taken = time.time() - start_time
+
+
+    def get_runtime(self):
+        return self.time_taken
 
 
     def get_set_of_sim_docs(self, similar_documents):
-        """
-        Finds the similar documents within a the original list of documents
-
-        :param similar_documents: list of similar documents or genomes
-        """
         for set_docs in similar_documents:
             if len(set_docs) > 1:
                 self.sim_docs_set.add(frozenset(set_docs))
 
 
     def shingling(self, data):
-        """
-        Creates k length shingles for all the documents in the original data file
-
-        :param data: list of documents or genomes
-        :return: a list of all the shingles in a given document
-        """
         shingles = set()
         data_as_shingles = []
         for data_file in data:
-            for i in range(len(data_file)-self.shingle_length): 
+            for i in range(len(data_file) - self.shingle_length):
                 shingles.add(data_file[i:i+self.shingle_length])
         shingles_document = []
         for shingle in shingles:
@@ -63,14 +56,8 @@ class LSH:
             shingles_document.append(document_in_current_shingle)
         return shingles_document
 
-    def jaccard(self, shingles_document):
-        """
-        Calculates the Jaccard Index in a given document, or the intersection of all shingles divided by the
-        union of all shingles in a document or genome.
 
-        :param shingles_document: a matrix where the rows are the shingles and the columns are the different files
-        :return: a float: that represents the Jaccard Index of a given document or genome
-        """
+    def jaccard(self, shingles_document):
         intersection_count = 0
         union_count = len(shingles_document)
         for i in range(len(shingles_document)):
@@ -78,14 +65,8 @@ class LSH:
                 intersection_count += 1
         return float(intersection_count) / float(union_count)
 
-    def min_hash(self, shingles_document):
-        """
-        Calculates and returns the min hash signature matrix
 
-        :param shingles_document: a matrix where the rows are the shingles and the columns are the different files
-        :return signature matrix: a matrix where the rows represent different files and if the columns are similar
-                                    there is a high probability that the documents are similar too
-        """
+    def min_hash(self, shingles_document):
         num_shingles = len(shingles_document)
         perm_indices = list(range(num_shingles))
         signature_matrix = []
@@ -105,13 +86,6 @@ class LSH:
 
 
     def lsh(self, sig_matrix):
-        """
-        Returns a list of sets of similar documents or genomes from the given data set
-
-        :param sig_matrix: a matrix where the rows represent different files and if the columns are similar
-                                    there is a high probability that the documents are similar too
-        :return: a list: that contains sets of similar documents
-        """
         buckets = {}
         similar_documents = []
         for i in range(self.num_buckets):
@@ -132,6 +106,112 @@ class LSH:
         return similar_documents
 
 
+    def is_similar(self, file1, file2):
+        for sim_docs in self.sim_docs_set:
+            # print('sim_docs', sim_docs)
+            # print('file1', file1)
+            # print('file2', file2)
+            if file1 in sim_docs and file2 in sim_docs:
+                return True
+        return False
+
+
+def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, max_perms=15, num_trials=10):
+    file_one_idx = random.randint(0,len(data))
+    file_two_idx = file_one_idx
+    while file_two_idx == file_one_idx:
+        file_two_idx = random.randint(0,len(data))
+    file_one = data[file_one_idx]
+    file_two = data[file_two_idx]
+    test_files = [file_one, file_two]
+    jaccard_lsh = LSH(test_files, shingle_length, 1, rows_per_band, buckets, True)
+    jaccard_similarity = jaccard_lsh.jaccard_similarity
+    min_hash_similarities = []
+    for i in range(0, max_perms, rows_per_band):
+        print("calculating permuation", i)
+        similarity_ct = 0
+        for j in range(num_trials):
+            curr_lsh = LSH(data, shingle_length, i, rows_per_band, buckets)
+            if curr_lsh.is_similar(file_one_idx, file_two_idx):
+                similarity_ct += 1
+        min_hash_similarities.append(similarity_ct / num_trials)
+
+    print('jaccard similarity', jaccard_similarity)
+    print('min hash similarities', min_hash_similarities)
+
+    permutations = list(range(0, max_perms, rows_per_band))
+    jaccard_sims = [jaccard_similarity] * len(permutations)
+
+    plt.plot(permutations, min_hash_similarities, "ro", label='min hash')
+    plt.plot(permutations, jaccard_sims, "b--", label='jaccard')
+    plt.legend(loc='lower right')
+    plt.xlabel('Number of Permutations')
+    plt.ylabel('Percentage of Similarity')
+    plt.title('Permutations vs Similarity Percentage')
+    plt.savefig('ra-plots/perms_vs_jaccard_trial_2.png')
+
+
+def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials=10):
+    file_one_idx = random.randint(0,len(data))
+    file_two_idx = file_one_idx
+    while file_two_idx == file_one_idx:
+        file_two_idx = random.randint(0,len(data))
+    # print("data", len(data))
+    # print('file_one_idx', file_one_idx)
+    file_one = data[file_one_idx]
+    file_two = data[file_two_idx]
+    test_files = [file_one, file_two]
+    jaccard_lsh = LSH(test_files, shingle_length, 1, 1, 1, True)
+    jaccard_similarity = jaccard_lsh.jaccard_similarity
+    min_hash_similarities = []
+    for i in range(1, max_rows_per_band):
+        print("calculating rows per band", i)
+        similarity_ct = 0
+        for j in range(num_trials):
+            curr_lsh = LSH(data, shingle_length, i * 5, i, buckets)
+            if curr_lsh.is_similar(file_one_idx, file_two_idx):
+                similarity_ct += 1
+        min_hash_similarities.append(similarity_ct / num_trials)
+
+    print('jaccard similarity', jaccard_similarity)
+    print('min hash similarities', min_hash_similarities)
+
+    permutations = list(range(1, max_rows_per_band))
+    jaccard_sims = [jaccard_similarity] * len(permutations)
+
+    plt.plot(permutations, min_hash_similarities, "ro", label='min hash')
+    plt.plot(permutations, jaccard_sims, "b--", label='jaccard')
+    plt.legend(loc='lower right')
+    plt.xlabel('Number of Rows per Band')
+    plt.ylabel('Percentage of Similarity')
+    plt.title('Rows per Band vs Similarity Percentage')
+    plt.savefig('ra-plots/rows_vs_jaccard.png')
+
+
+def document_ct_vs_runtime(data, shingle_length, permutations, rows_per_band, buckets, num_trials=10):
+    lsh_times = []
+    for i in range(1, len(data)):
+        print('document numbers', i)
+        lsh_time = 0
+        for j in range(num_trials):
+            curr_lsh = LSH(data, shingle_length, permutations, rows_per_band, buckets)
+            curr_lsh_time = curr_lsh.get_runtime()
+            lsh_time += curr_lsh_time
+        lsh_times.append(lsh_time / num_trials)
+
+    # print('jaccard times', jaccard_times)
+    # print('min hash times', lsh_times)
+
+    document_cts = range(1, len(data))
+
+    # plt.plot(document_cts, jaccard_times, "-r", label='Jaccard Runtime')
+    plt.plot(document_cts, lsh_times, "-b", label='LSH Runtime')
+    plt.legend(loc='lower right')
+    plt.xlabel('Number of Documents')
+    plt.ylabel('Runtime (s)')
+    plt.title('Number of Documents vs Runtime in Seconds')
+    plt.savefig('ra-plots/doc_cts_vs_runtime.png')
+
 def main():
     # data = []
     # data.append(open("hello_one.txt","r").read())
@@ -140,22 +220,16 @@ def main():
     # LSH(data, 3, 4, 2, 15)
 
     data = []
-    for i in range(1,23):
+    for i in range(1, 23):
         bad_chars = ['\n', 'W']
-        file_string = open("ra-data/strain"+str(i)+".txt","r").read()
-        file_string = filter(lambda i: i not in bad_chars, file_string)
+        file_string = open("ra-data/strain" + str(i) + ".txt","r").read()
+        file_string = file_string.replace('\n', '')
+        file_string = file_string.replace('W', '')
         data.append(file_string)
-    file_one = random.randint(0,len(data))
-    file_two = file_one
-    while file_two == file_one:
-        file_two = random.randint(0,len(data))
-    #data_analysis = [data[file_one], data[file_two]]
-    data_analysis = [data[0], data[3]]
-    LSH(data_analysis, 5, 100, 10, 50)
+    # permutations_vs_jaccard(data, 5, 10, 50, 100, 100)
+    rows_vs_jaccard(data, 5, 20, 50, 100)
+    # document_ct_vs_runtime(data, 5, 50, 5, 50, 100)
     #LSH(data, 5, 100, 10, 50)
-
-        
-    
 
 
 if __name__ == "__main__":
