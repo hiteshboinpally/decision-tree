@@ -11,7 +11,6 @@ class DecisionTree:
     """
     A Decision Tree class that allows for classification of data into categories based on
     features of the data.
-
     """
 
     def __init__(self, classes, attributes, data, train=0.70, max_height=10, get_best_val_score=False):
@@ -115,6 +114,7 @@ class DecisionTree:
     def create_tree(self, height):
         """
         creates the actual Decision Tree based on entropy and information gain.
+        :param height: the maximum height of the given tree. Assumed to be an int.
         """
         best_att = self.calc_best_att(self._train_df)
         self._curr_tree_head.data = best_att
@@ -129,6 +129,7 @@ class DecisionTree:
         :param best_att: the current node's best attribute to split on. Assumed to be a String.
         :param curr_node: the current node of the tree that we're on. Assumed to be a Node.
         :param curr_height: the current height of the overall tree. Assumed to be an int.
+        :param max_height: the maximum height of the given tree. Assumed to be an int.
         """
         unique_decs = list(df[self._classes].unique())
         curr_node.nexts = []
@@ -163,6 +164,7 @@ class DecisionTree:
         Checks the accuracy of the Decision Tree based on the given data.
 
         :param data: The DataFrame for which to check the accuracy of the model.
+        :param isTest: whether or not we're checking the test set
         :return a decimal: that represents the accuracy of the model
         """
         if len(data) == 0:
@@ -179,6 +181,7 @@ class DecisionTree:
         of the tree.
 
         :param row: The row for the tree to classify.
+        :param isTest: whether or not we're checking the test set
         :return method call: calls recursive method that is used to pass through the nodes of the decision tree, while
                              comparing the given value to the output.
         """
@@ -191,6 +194,7 @@ class DecisionTree:
 
         :param row: The row for the tree to classify.
         :param node: the current node of the tree.
+        :param isTest: whether or not we're checking the test set
         :return recursive method call:
                 in which the node parameter is updated to represents the next child node in the tree
         """
@@ -238,9 +242,11 @@ class DecisionTree:
 
     def get_heights_and_val_accs(self):
         """
-        Returns the height of the decision tree and accuracy of the model
+        Returns the heights of the decision tree and the corresponding validation accuracies
+        of the model
 
-        :return the height of the decision tree and accuracy of the model
+        :return the heights of the decision tree and the corresponding validation accuracies
+        of the model
         """
         return self._heights, self._val_accs
 
@@ -258,7 +264,7 @@ class DecisionTree:
     def inorder(self, node):
         """
         Inorder traversal of the n-ary Decision Tree where we print out the value at each node
-        :param node: the root node of the Decision Tree
+        :param node: the curr node of the Decision Tree to print
         """
         if node == None:
             return

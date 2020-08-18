@@ -21,8 +21,6 @@ class LSH:
         self.num_rows_per_band = num_rows_per_band
         self.num_buckets = num_buckets
         self.num_documents = len(data)
-        #perform shingling
-        #minhashing
 
         start_time = time.time()
         shingles_document = self.shingling(data)
@@ -161,9 +159,6 @@ class LSH:
         :return: a boolean: true if the file 1 and file 2 are similar, otherwise false
         """
         for sim_docs in self.sim_docs_set:
-            # print('sim_docs', sim_docs)
-            # print('file1', file1)
-            # print('file2', file2)
             if file1 in sim_docs and file2 in sim_docs:
                 return True
         return False
@@ -199,9 +194,6 @@ def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, max_pe
                 similarity_ct += 1
         min_hash_similarities.append(similarity_ct / num_trials)
 
-    print('jaccard similarity', jaccard_similarity)
-    print('min hash similarities', min_hash_similarities)
-
     permutations = list(range(0, max_perms, rows_per_band))
     jaccard_sims = [jaccard_similarity] * len(permutations)
 
@@ -229,8 +221,6 @@ def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials
     file_two_idx = file_one_idx
     while file_two_idx == file_one_idx:
         file_two_idx = random.randint(0,len(data))
-    # print("data", len(data))
-    # print('file_one_idx', file_one_idx)
     file_one = data[file_one_idx]
     file_two = data[file_two_idx]
     test_files = [file_one, file_two]
@@ -246,9 +236,6 @@ def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials
                 similarity_ct += 1
         min_hash_similarities.append(similarity_ct / num_trials)
 
-    print('jaccard similarity', jaccard_similarity)
-    print('min hash similarities', min_hash_similarities)
-
     permutations = list(range(1, max_rows_per_band))
     jaccard_sims = [jaccard_similarity] * len(permutations)
 
@@ -259,6 +246,7 @@ def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials
     plt.ylabel('Percentage of Similarity')
     plt.title('Rows per Band vs Similarity Percentage')
     plt.savefig('ra-plots/rows_vs_jaccard.png')
+
 
 """
 def document_ct_vs_runtime(data, shingle_length, permutations, rows_per_band, buckets, num_trials=10):
@@ -287,9 +275,8 @@ def document_ct_vs_runtime(data, shingle_length, permutations, rows_per_band, bu
     plt.savefig('ra-plots/doc_cts_vs_runtime.png')
 """
 
+
 def main():
-
-
     data = []
     for i in range(1, 23):
         bad_chars = ['\n', 'W']
@@ -309,8 +296,6 @@ def main():
         print("Strand number", file_one_idx + 1, " and strand number", file_two_idx + 1, "are not similar")
     # permutations_vs_jaccard(data, 5, 10, 50, 100, 2)
     # rows_vs_jaccard(data, 5, 20, 50, 2)
-
-
 
 
 if __name__ == "__main__":
