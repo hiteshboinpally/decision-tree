@@ -211,7 +211,7 @@ def permutations_vs_jaccard(data, shingle_length, rows_per_band, buckets, max_pe
     plt.xlabel('Number of Bands')
     plt.ylabel('Percentage of Similarity')
     plt.title('Number of Bands vs Similarity Percentage')
-    plt.savefig('ra-plots/perms_vs_jaccard_trial_2.png')
+    plt.savefig('ra-plots/perms_vs_jaccard.png')
 
 
 def rows_vs_jaccard(data, shingle_length, max_rows_per_band, buckets, num_trials=10):
@@ -297,10 +297,19 @@ def main():
         file_string = file_string.replace('\n', '')
         file_string = file_string.replace('W', '')
         data.append(file_string)
-    LSH(data, 5, 100, 10, 50)
-    # permutations_vs_jaccard(data, 5, 10, 50, 100, 100)
-    # rows_vs_jaccard(data, 5, 20, 50, 100)
-    # document_ct_vs_runtime(data, 5, 50, 5, 50, 100)
+    lsh = LSH(data, 5, 100, 10, 50)
+    file_one_idx = random.randint(0, len(data))
+    file_two_idx = file_one_idx
+    while file_two_idx == file_one_idx:
+        file_two_idx = random.randint(0, len(data))
+    similar = lsh.is_similar(file_one_idx, file_two_idx)
+    if similar:
+        print("Strand number", file_one_idx + 1, " and strand number", file_two_idx + 1, "are similar")
+    else:
+        print("Strand number", file_one_idx + 1, " and strand number", file_two_idx + 1, "are not similar")
+    # permutations_vs_jaccard(data, 5, 10, 50, 100, 2)
+    # rows_vs_jaccard(data, 5, 20, 50, 2)
+
 
 
 

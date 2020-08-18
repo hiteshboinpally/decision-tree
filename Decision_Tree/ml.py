@@ -173,7 +173,7 @@ class DecisionTree:
                 total_correct += self.start_tree(row, isTest)
             return total_correct / len(data)
 
-    def start_tree(self, row, isTest):
+    def start_tree(self, row, isTest = False):
         """
         Starts the process of passing through the tree and checking the given row against the output
         of the tree.
@@ -182,7 +182,7 @@ class DecisionTree:
         :return method call: calls recursive method that is used to pass through the nodes of the decision tree, while
                              comparing the given value to the output.
         """
-        return self.pass_thru_tree(row, self._curr_tree_head)
+        return self.pass_thru_tree(row, self._curr_tree_head, isTest)
 
     def pass_thru_tree(self, row, node, isTest):
         """
@@ -210,7 +210,7 @@ class DecisionTree:
                 next_node_index = np.random.randint(len(node.nexts))
             else:
                 next_node_index = node.splits.index(val_in_row)
-            return self.pass_thru_tree(row, node.nexts[next_node_index])
+            return self.pass_thru_tree(row, node.nexts[next_node_index], isTest)
 
     def get_val_accuracy(self):
         """
