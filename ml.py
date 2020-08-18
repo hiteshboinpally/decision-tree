@@ -169,11 +169,11 @@ class DecisionTree:
         else:
             total_correct = 0
             for index, row in data.iterrows():
-                total_correct += self.start_tree(row)
+                total_correct += self.start_tree(row, isTest)
             return total_correct / len(data)
 
 
-    def start_tree(self, row):
+    def start_tree(self, row, isTest):
         """
         Starts the process of passing through the tree and checking the given row against the output
         of the tree.
@@ -186,7 +186,7 @@ class DecisionTree:
         return self.pass_thru_tree(row, self._curr_tree_head)
 
 
-    def pass_thru_tree(self, row, node):
+    def pass_thru_tree(self, row, node, isTest):
         """
         Recursively passes through the tree node by node and attempts to classify the given row in
         the instance's Decision Tree.
@@ -198,8 +198,9 @@ class DecisionTree:
         """
         if type(node) == str:
             row_desc = row[self._classes]
-            self._model_preds.append(node)
-            self._true_preds.append(row_desc)
+            if isTest:
+                self._model_preds.append(node)
+                self._true_preds.append(row_desc)
             if node == row_desc:
                 return 1
             else:
@@ -261,6 +262,7 @@ class DecisionTree:
             print(node.data, node.splits)
 
             self.inorder(node.nexts[total-1])
+
 
 def set_months(date):
     """

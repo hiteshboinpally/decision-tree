@@ -223,17 +223,9 @@ def main():
     for i in range(1, 23):
         bad_chars = ['\n', 'W']
         file_string = open("ra-data/strain" + str(i) + ".txt","r").read()
-        # file_string = filter(lambda i: i not in bad_chars, file_string)
         file_string = file_string.replace('\n', '')
         file_string = file_string.replace('W', '')
         data.append(file_string)
-    # file_one = random.randint(0,len(data))
-    # file_two = file_one
-    # while file_two == file_one:
-    #     file_two = random.randint(0,len(data))
-    # #data_analysis = [data[file_one], data[file_two]]
-    # data_analysis = [data[0], data[3]]
-    # LSH(data_analysis, 5, 100, 10, 50)
     # permutations_vs_jaccard(data, 5, 10, 50, 100, 100)
     rows_vs_jaccard(data, 5, 20, 50, 100)
     # document_ct_vs_runtime(data, 5, 50, 5, 50, 100)
