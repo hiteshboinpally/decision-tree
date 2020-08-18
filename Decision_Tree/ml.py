@@ -11,7 +11,6 @@ class DecisionTree:
     """
     A Decision Tree class that allows for classification of data into categories based on
     features of the data.
-
     """
 
     def __init__(self, classes, attributes, data, train=0.70, max_height=10, get_best_val_score=False):
