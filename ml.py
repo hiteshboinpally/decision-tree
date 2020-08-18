@@ -251,6 +251,7 @@ class DecisionTree:
     def get_val_accuracy(self):
         """
         Returns the accuracy of the model on the validation set.
+
         :return a decimal: that represents the accuracy of the validation set.
         """
         return self.check_set(self._val_df)
@@ -259,6 +260,7 @@ class DecisionTree:
     def get_train_accuracy(self):
         """
         Returns the accuracy of the model on the training set.
+
         :return a decimal: that represents the accuracy of the train set.
         """
         return self.check_set(self._train_df)
@@ -267,6 +269,7 @@ class DecisionTree:
     def get_test_accuracy(self):
         """
         Returns the accuracy of the model on the testing set.
+
         :return a decimal: that represents the accuracy of the test set.
         """
         return self.check_set(self._test_df)
@@ -459,6 +462,7 @@ def plot_heights_vs_val_accs(classes, features, data, train_perc=0.7, max_height
     :param max_height: Maximum height of the Decision Tree (Hyper-paramter)
     :param num_trials: Number of times we will run the Decision Tree with given max_height parameter
     """
+
     heights = range(max_height)
     all_val_accs = []
     print("plotting heights of trree versus validation accuracy...")
@@ -486,7 +490,6 @@ def plot_train_perc_vs_test_accs(classes, features, data, max_height=10, num_tri
     :param features: A list of the names of the column in the given data corresponding to
                            attributes.
     :param data: the set of all data points that contains info on Austin weather
-    :param train_perc: percentage of total data set that is dedicated to the training set
     :param max_height: Maximum height of the Decision Tree (Hyper-paramter)
     :param num_trials: Number of times we will run the Decision Tree with given max_height parameter
     """
