@@ -17,24 +17,24 @@ seaborn
 ```
 
 
-## Running the program 
+## Running the program
 
 
 ```
 Run the ml.py to create the decision tree and print the accuracy on the austin_weather_data.csv data file
-Uncomment line 548 and run ml.py to print the inorder traversal of the decision tree
-Uncomment line 549 and run ml.py to plot confusion matrix heat map 
-Uncomment line 550 and run ml.py to plot Decision Tree height vs. Validation Accuracy
-Uncomment line 551 and run ml.py to plot Training percentage vs. Testing Accuracy 
+Uncomment line 554 and run ml.py to print the inorder traversal of the decision tree
+Uncomment line 555 and run ml.py to plot confusion matrix heat map
+Uncomment line 556 and run ml.py to plot Decision Tree height vs. Validation Accuracy
+Uncomment line 557 and run ml.py to plot Training percentage vs. Testing Accuracy
 ```
 
 
 
 ## Authors
 
-* **Gaurav G** 
-* **Aditya B** 
-* **Hitesh B** 
+* **Gaurav G**
+* **Aditya B**
+* **Hitesh B**
 
 
 
