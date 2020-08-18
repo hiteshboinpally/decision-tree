@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from Decision_Tree.node import Node
+from CSE_312_Final_Project.Decision_Tree.node import Node
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
