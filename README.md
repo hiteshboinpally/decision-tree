@@ -11,7 +11,6 @@ What things you need to install the software and how to install them
 pandas
 numpy
 matplotlib.pyplot
-Decision_Tree.node
 sklearn.metrics
 seaborn
 ```
