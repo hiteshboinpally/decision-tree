@@ -1,6 +1,6 @@
 # Project Title
 
-C4.5 Decision Tree
+Decision Tree
 
 
 ### Libraries
